@@ -1,3 +1,4 @@
+mod progress;
 mod task;
 
 use crate::target::{Dependencies, Target};

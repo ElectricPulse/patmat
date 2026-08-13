@@ -27,6 +27,16 @@ async-trait = "0.1.89"
 color-eyre = "0.6.5"
 derive-new = "0.7.0"
 dyn-clone = "1.0.20"
+gix = { version = "0.86.0", default-features = false, features = [
+    "auto-chain-error",
+    "blocking-http-transport-reqwest-rust-tls",
+    "comfort",
+    "parallel",
+    "progress-tree",
+    "sha1",
+    "sha256",
+    "worktree-mutation",
+] }
 lucide-icons = "1.28.0"
 regex = "1.11.3"
 tokio = { version = "1.47.1", features = ["full"] }
@@ -36,3 +46,6 @@ vizual-macros.workspace = true
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+tempfile = "3.21.0"
