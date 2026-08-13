@@ -1,3 +1,4 @@
+use arc_swap::ArcSwap;
 use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use std::sync::{Arc, atomic::Ordering};
@@ -33,6 +34,8 @@ pub(super) enum Clone_progress {
     Complete,
     Failed(String),
 }
+
+pub(super) type Clone_progress_state = Arc<ArcSwap<Clone_progress>>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub(super) struct Progress_row {
@@ -98,11 +101,11 @@ fn single_line(value: &str) -> String {
 
 #[derive(Clone)]
 pub(super) struct Clone_progress_widget {
-    progress: State<Clone_progress>,
+    progress: Clone_progress_state,
 }
 
 impl Clone_progress_widget {
-    pub(super) fn new(progress: State<Clone_progress>) -> Self {
+    pub(super) fn new(progress: Clone_progress_state) -> Self {
         Self { progress }
     }
 }
@@ -125,10 +128,14 @@ impl Widget_trait for Clone_progress_widget {
         title.style.set(theme.load().specific.text.subtitle);
         let mut children: Vec<Widget> = vec![left_aligned(title)];
 
-        match &*progress {
-            Clone_progress::Starting => children.push(left_aligned(Text::new("Starting…"))),
+        match &**progress {
+            Clone_progress::Starting => {
+                children.push(left_aligned(Text::new("0%")));
+                children.push(Box::new(Progress_bar::new(0.0)));
+            }
             Clone_progress::Running(rows) if rows.is_empty() => {
-                children.push(left_aligned(Text::new("Connecting to remote…")));
+                children.push(left_aligned(Text::new("0%")));
+                children.push(Box::new(Progress_bar::new(0.0)));
             }
             Clone_progress::Running(rows) => {
                 for row in rows {

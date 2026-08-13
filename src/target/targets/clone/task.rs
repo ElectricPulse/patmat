@@ -1,6 +1,7 @@
-use super::progress::{Clone_progress, Clone_progress_widget};
+use super::progress::{Clone_progress, Clone_progress_state, Clone_progress_widget};
 use crate::target::task;
 
+use arc_swap::ArcSwap;
 use async_trait::async_trait;
 use color_eyre::eyre::{Result, WrapErr};
 use std::{
@@ -8,13 +9,12 @@ use std::{
     sync::{Arc, atomic::AtomicBool},
     time::Duration,
 };
-use vizual::widget::{Shared_widget, Widget};
 
 #[derive(Clone)]
 pub(super) struct Task {
     pub(super) path: PathBuf,
     pub(super) remote_path: String,
-    pub(super) widget: Shared_widget<Widget>,
+    progress: Clone_progress_state,
 }
 
 impl Task {
@@ -22,8 +22,12 @@ impl Task {
         Self {
             path,
             remote_path,
-            widget: task::empty_widget(),
+            progress: Arc::new(ArcSwap::from_pointee(Clone_progress::Starting)),
         }
+    }
+
+    pub(super) fn widget(&self) -> Clone_progress_widget {
+        Clone_progress_widget::new(self.progress.clone())
     }
 }
 
@@ -38,11 +42,12 @@ impl task::Task_trait for Task {
             .try_exists()
             .wrap_err_with(|| format!("Failed to inspect {}", git_dir.display()))?;
         if git_directory_exists && git_dir.is_dir() {
+            self.progress.store(Arc::new(Clone_progress::Complete));
+            manager.view.refresh();
             return Ok(((), task::Status::Already_built));
         }
 
-        let state = manager.view.render.new_state(Clone_progress::Starting);
-        task::set_widget(&self.widget, Clone_progress_widget::new(state.clone())).await?;
+        self.progress.store(Arc::new(Clone_progress::Starting));
         manager.view.refresh();
 
         let progress = gix::progress::tree::Root::new();
@@ -63,8 +68,9 @@ impl task::Task_trait for Task {
                 }
                 _ = refresh.tick() => {
                     let snapshot = Clone_progress::from_tree(&progress);
-                    if *state.load() != snapshot {
-                        state.store(snapshot);
+                    if self.progress.load_full().as_ref() != &snapshot {
+                        self.progress.store(Arc::new(snapshot));
+                        manager.view.refresh();
                     }
                 }
             }
@@ -72,11 +78,14 @@ impl task::Task_trait for Task {
 
         match result {
             Ok(()) => {
-                state.store(Clone_progress::Complete);
+                self.progress.store(Arc::new(Clone_progress::Complete));
+                manager.view.refresh();
                 Ok(((), task::Status::Built))
             }
             Err(error) => {
-                state.store(Clone_progress::Failed(format!("{error:#}")));
+                self.progress
+                    .store(Arc::new(Clone_progress::Failed(format!("{error:#}"))));
+                manager.view.refresh();
                 Err(error)
             }
         }

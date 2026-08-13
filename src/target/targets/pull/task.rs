@@ -4,20 +4,15 @@ use async_trait::async_trait;
 use color_eyre::eyre::{WrapErr, bail};
 use std::path::PathBuf;
 use tokio::process::Command;
-use vizual::widget::{Shared_widget, Widget};
 
 #[derive(Clone)]
 pub(super) struct Task {
     pub(super) repo_path: PathBuf,
-    pub(super) widget: Shared_widget<Widget>,
 }
 
 impl Task {
     pub fn new(repo_path: PathBuf) -> Self {
-        Self {
-            repo_path,
-            widget: task::empty_widget(),
-        }
+        Self { repo_path }
     }
 }
 
@@ -44,12 +39,7 @@ impl task::Task_trait for Task {
 
         let before_commit = String::from_utf8_lossy(&output.stdout).trim().to_string();
 
-        // Pull using terminal task to show output
-        let terminal_task = terminal::task::Task::new_in_dir_with_widget(
-            "git pull",
-            self.repo_path.clone(),
-            self.widget.clone(),
-        );
+        let terminal_task = terminal::task::Task::new_in_dir("git pull", self.repo_path.clone());
 
         let result = {
             let result = terminal_task.run(manager).await;

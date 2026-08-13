@@ -1,14 +1,14 @@
 use crate::target::task;
-use vizual::widget::{Shared_widget, Widget, widgets::screen::Screen};
 
 use async_trait::async_trait;
+use color_eyre::eyre::{WrapErr, bail};
 use std::path::PathBuf;
+use tokio::process::Command;
 
 #[derive(Clone)]
 pub(crate) struct Task {
     pub(super) command: String,
     pub(super) working_dir: Option<PathBuf>,
-    pub(super) widget: Shared_widget<Widget>,
 }
 
 impl Task {
@@ -16,34 +16,12 @@ impl Task {
         Self {
             command: command.into(),
             working_dir: None,
-            widget: task::empty_widget(),
         }
     }
     pub fn new_in_dir(command: impl Into<String>, working_dir: impl Into<PathBuf>) -> Self {
         Self {
             command: command.into(),
             working_dir: Some(working_dir.into()),
-            widget: task::empty_widget(),
-        }
-    }
-
-    pub fn new_with_widget(command: impl Into<String>, widget: Shared_widget<Widget>) -> Self {
-        Self {
-            command: command.into(),
-            working_dir: None,
-            widget,
-        }
-    }
-
-    pub fn new_in_dir_with_widget(
-        command: impl Into<String>,
-        working_dir: impl Into<PathBuf>,
-        widget: Shared_widget<Widget>,
-    ) -> Self {
-        Self {
-            command: command.into(),
-            working_dir: Some(working_dir.into()),
-            widget,
         }
     }
 }
@@ -52,17 +30,20 @@ impl Task {
 impl task::Task_trait for Task {
     type Output = ();
 
-    async fn run(&self, manager: &mut task::Manager<'_>) -> task::Task_result {
-        let mut screen = Screen::new(manager.view.render.clone());
-        let handle = match &self.working_dir {
-            Some(working_dir) => screen.run_in_dir(self.command.clone(), working_dir),
-            None => screen.run(self.command.clone()),
-        }?;
+    async fn run(&self, _manager: &mut task::Manager<'_>) -> task::Task_result {
+        let mut command = Command::new("/bin/bash");
+        let _ = command.arg("-c").arg(&self.command);
+        if let Some(working_dir) = &self.working_dir {
+            let _ = command.current_dir(working_dir);
+        }
 
-        task::set_widget(&self.widget, screen).await?;
-        manager.view.refresh();
-
-        handle.wait().await?;
+        let status = command
+            .status()
+            .await
+            .wrap_err_with(|| format!("Failed to run {}", self.command))?;
+        if !status.success() {
+            bail!("Command exited with {status}");
+        }
 
         Ok(((), task::Status::Built))
     }

@@ -4,22 +4,16 @@ use async_trait::async_trait;
 use color_eyre::eyre::{WrapErr, bail};
 use std::path::PathBuf;
 use tokio::process::Command;
-use vizual::widget::{Shared_widget, Widget};
 
 #[derive(Clone)]
 pub(super) struct Task {
     pub(super) repo_path: PathBuf,
     pub(super) branch: String,
-    pub(super) widget: Shared_widget<Widget>,
 }
 
 impl Task {
     pub fn new(repo_path: PathBuf, branch: String) -> Self {
-        Self {
-            repo_path,
-            branch,
-            widget: task::empty_widget(),
-        }
+        Self { repo_path, branch }
     }
 }
 
@@ -49,11 +43,9 @@ impl task::Task_trait for Task {
             return Ok(((), task::Status::Already_built));
         }
 
-        // Checkout the branch using terminal task to show output
-        let terminal_task = terminal::task::Task::new_in_dir_with_widget(
+        let terminal_task = terminal::task::Task::new_in_dir(
             format!("git checkout {}", self.branch),
             self.repo_path.clone(),
-            self.widget.clone(),
         );
 
         let result = terminal_task.run(manager).await;

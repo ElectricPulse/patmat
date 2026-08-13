@@ -2,40 +2,7 @@ use async_trait::async_trait;
 
 use super::{Output_constraints, Target};
 use color_eyre::eyre::Result;
-use vizual::{
-    Render,
-    widget::{Shared_widget, Widget, Widget_trait},
-};
-
-#[derive(Clone, Copy)]
-struct Empty_widget;
-
-#[async_trait]
-impl Widget_trait for Empty_widget {
-    async fn layout(
-        &mut self,
-        _render: Render,
-        _theme: vizual::state::State<vizual::theme::Theme>,
-        _focus: &mut vizual::widget::Focus_provider,
-        _hitbox: &mut vizual::layouter::hitbox::Hitbox,
-        _parent: vizual::layouter::hitbox::Hitbox,
-        _problem: vizual::component::context::Component_context,
-        _text_context: &mut vizual::graphics::text::Text_context,
-        _slots: &mut vizual::slot::manager::Slots,
-    ) -> Result<vizual::component::Children> {
-        Ok(vec![])
-    }
-}
-
-pub fn empty_widget() -> Shared_widget<Widget> {
-    let widget: Widget = Box::new(Empty_widget);
-    widget.into_shared()
-}
-
-pub async fn set_widget(shared: &Shared_widget<Widget>, widget: impl Widget_trait) -> Result<()> {
-    *shared.lock().await? = Box::new(widget);
-    Ok(())
-}
+use vizual::Render;
 
 #[derive(Clone)]
 pub enum Status {

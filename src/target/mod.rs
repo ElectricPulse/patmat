@@ -19,7 +19,7 @@ use crate::target::{
 use color_eyre::eyre::{Result, eyre};
 use vizual::{
     sync::{Mutex, Thread_safe},
-    widget::{Shared_widget, Widget},
+    widget::{Widget, Widget_trait},
 };
 
 pub trait Output_constraints: Thread_safe + Clone {}
@@ -120,8 +120,8 @@ pub type Dependencies = Vec<Dependency>;
 // Task_manager bundles output and task because there is no reason to try fetching the output when a task is in progress -
 // one has to wait till it's done seperately
 // that also means that task_state needs access to metadata shared state because when it's done it will need to quickly update the status
-// Widget is on a seperate shared state because it's gonna get locked during rendering
-// That being said, if the above is true there is now no reason to encapsulate Target itself in a an Arc
+// Widget is a separate field because it must remain renderable while the task is locked during a
+// build. A widget that needs shared mutable state can carry that state itself.
 #[derive(Clone)]
 pub struct Target<Output: Output_constraints> {
     metadata: Arc<Mutex<Target_metadata>>,
@@ -130,43 +130,19 @@ pub struct Target<Output: Output_constraints> {
     // entire build, so a widget stored as the task itself could not be rendered while that build
     // was running. Keeping presentation separate also lets the same task implementation be used
     // by different targets with different UIs.
-    widget: Option<Shared_widget<Widget>>,
+    widget: Option<Widget>,
 }
 
 impl<Output: Output_constraints> Target<Output> {
     pub fn new_independent(
         name: impl Into<String>,
+        path: Option<PathBuf>,
         task: impl Task_trait<Output = Output> + 'static,
     ) -> Self {
-        Self::new(name, task, Dependencies::new())
-    }
-
-    pub fn new_independent_with_path(
-        name: impl Into<String>,
-        path: PathBuf,
-        task: impl Task_trait<Output = Output> + 'static,
-    ) -> Self {
-        Self::new_with_path(name, path, task, Dependencies::new())
+        Self::new(name, path, task, Dependencies::new())
     }
 
     pub fn new(
-        name: impl Into<String>,
-        task: impl Task_trait<Output = Output> + 'static,
-        dependencies: Dependencies,
-    ) -> Self {
-        Self::create(name, None, task, dependencies)
-    }
-
-    pub fn new_with_path(
-        name: impl Into<String>,
-        path: PathBuf,
-        task: impl Task_trait<Output = Output> + 'static,
-        dependencies: Dependencies,
-    ) -> Self {
-        Self::create(name, Some(path), task, dependencies)
-    }
-
-    fn create(
         name: impl Into<String>,
         path: Option<PathBuf>,
         task: impl Task_trait<Output = Output> + 'static,
@@ -191,8 +167,8 @@ impl<Output: Output_constraints> Target<Output> {
         }
     }
 
-    pub fn set_widget(&mut self, widget: Shared_widget<Widget>) {
-        self.widget = Some(widget)
+    pub fn set_widget(&mut self, widget: impl Widget_trait) {
+        self.widget = Some(Box::new(widget));
     }
 
     pub async fn get(&self, view: &View) -> Result<Output> {
@@ -213,7 +189,7 @@ impl<Output: Output_constraints> Target_trait for Target<Output> {
     }
 
     fn widget(&self) -> Option<Widget> {
-        self.widget.clone().map(Into::into)
+        self.widget.clone()
     }
 
     async fn ensure_ran(&self, view: &View) -> Result<()> {

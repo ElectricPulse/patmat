@@ -17,5 +17,5 @@ impl task::Task_trait for Task {
 }
 
 pub fn new(name: impl Into<String>, dependencies: Dependencies) -> Target<()> {
-    Target::new(name, Task {}, dependencies)
+    Target::new(name, None, Task {}, dependencies)
 }
