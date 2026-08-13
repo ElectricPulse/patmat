@@ -10,7 +10,7 @@ use vizual::{
     slot::manager::Slots,
     state::State,
     widget::{
-        Focus_provider, Widget, Widget_trait,
+        Focus_provider, Shared_widget, Widget, Widget_trait,
         custom_widget::Custom_widget_trait,
         widgets::{
             icon::Icon,
@@ -93,11 +93,27 @@ impl Custom_widget_trait for Target_tree_item {
     }
 }
 
-#[derive(Clone, new)]
+#[derive(Clone)]
 pub struct Target_tree {
     dependencies: Dependencies,
     selected: State<Option<Dependency>>,
     working_directory: PathBuf,
+    menu: Option<Shared_widget<Menu<Option<Dependency>>>>,
+}
+
+impl Target_tree {
+    pub fn new(
+        dependencies: Dependencies,
+        selected: State<Option<Dependency>>,
+        working_directory: PathBuf,
+    ) -> Self {
+        Self {
+            dependencies,
+            selected,
+            working_directory,
+            menu: None,
+        }
+    }
 }
 
 #[async_trait]
@@ -113,25 +129,32 @@ impl Widget_trait for Target_tree {
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
     ) -> Result<Children> {
-        let targets = get_targets(&self.dependencies)
-            .await?
-            .into_iter()
-            .map(|target| -> Shared_menu_item<Option<Dependency>> {
-                Target_tree_item::new(target, self.working_directory.clone())
-                    .into_shared()
-                    .into()
-            })
-            .collect::<Vec<_>>();
+        if self.menu.is_none() {
+            let targets = get_targets(&self.dependencies)
+                .await?
+                .into_iter()
+                .map(|target| -> Shared_menu_item<Option<Dependency>> {
+                    Target_tree_item::new(target, self.working_directory.clone())
+                        .into_shared()
+                        .into()
+                })
+                .collect::<Vec<_>>();
 
-        let Some(first_target) = targets.first() else {
-            return Ok(vec![]);
-        };
+            let Some(first_target) = targets.first() else {
+                return Ok(vec![]);
+            };
 
-        let default_target = get_selector(first_target);
-        let mut menu = Menu::new(targets, default_target, render);
-        menu.set_submit_state(self.selected.clone());
+            let default_target = get_selector(first_target);
+            let mut menu = Menu::new(targets, default_target, render);
+            menu.set_submit_state(self.selected.clone());
+            self.menu = Some(Widget_trait::into_shared(menu));
+        }
 
-        Ok(vec![display!(menu)])
+        Ok(vec![display!(
+            self.menu
+                .clone()
+                .expect("target menu must exist after initialization")
+        )])
     }
 }
 

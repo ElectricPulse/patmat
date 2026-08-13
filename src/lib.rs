@@ -43,7 +43,7 @@ pub fn new(
         build_result_handle.store(Some(result));
     });*/
 
-    let selected_dependency = render.new_state(None);
+    let selected_dependency = render.new_state(dependencies.first().cloned());
     let target_tree =
         Target_tree::new(dependencies, selected_dependency.clone(), working_directory);
     // let target_tree = Scroll::new(target_tree);
