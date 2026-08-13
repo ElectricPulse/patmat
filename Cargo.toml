@@ -1,0 +1,38 @@
+[workspace]
+resolver = "3"
+members = ["configurator"]
+
+[workspace.dependencies]
+derive-where = "1.6.1"
+vizual = { git = "https://github.com/ElectricPulse/vizual" }
+vizual-macros = { git = "https://github.com/ElectricPulse/vizual" }
+
+[workspace.lints.rust]
+non_camel_case_types = "allow"
+non_upper_case_globals = "allow"
+unused_must_use = "warn"
+unused_results = "warn"
+
+[package]
+name = "patmat"
+version = "0.1.0"
+edition = "2024"
+repository = "https://github.com/ElectricPulse/patmat"
+license = "Apache-2.0"
+
+[dependencies]
+ambassador = "0.5.0"
+arc-swap = "1.7.1"
+async-trait = "0.1.89"
+color-eyre = "0.6.5"
+derive-new = "0.7.0"
+dyn-clone = "1.0.20"
+lucide-icons = "1.28.0"
+regex = "1.11.3"
+tokio = { version = "1.47.1", features = ["full"] }
+uniqify = "0.1.0"
+vizual.workspace = true
+vizual-macros.workspace = true
+
+[lints]
+workspace = true

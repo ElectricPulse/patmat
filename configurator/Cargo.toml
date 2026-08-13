@@ -1,0 +1,24 @@
+[package]
+name = "configurator"
+version = "0.1.0"
+edition = "2024"
+description = "A tree-based configuration editor for Patmat applications"
+repository = "https://github.com/ElectricPulse/patmat"
+license = "Apache-2.0"
+
+[dependencies]
+async-recursion = "1.1.1"
+async-trait = "0.1.89"
+color-eyre = "0.6.5"
+derive-where.workspace = true
+dyn-clone = "1.0.20"
+indexmap = "2.13.0"
+serde = "1.0.228"
+serde-saphyr = "0.0.8"
+tokio = "1.52.1"
+uniqify = "0.1.0"
+vizual.workspace = true
+vizual-macros.workspace = true
+
+[lints]
+workspace = true
