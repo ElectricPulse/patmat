@@ -11,7 +11,7 @@ struct Task {}
 #[async_trait]
 impl task::Task_trait for Task {
     type Output = ();
-    async fn run(&self, _manager: &mut task::Manager<'_>) -> task::Task_result {
+    async fn run(&self) -> task::Task_result {
         return Ok(((), Status::Built));
     }
 }

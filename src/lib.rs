@@ -18,12 +18,20 @@ use vizual::{
     layouter::hitbox::Hitbox,
     slot::manager::Slots,
     state::State,
-    widget::{Focus_provider, Shared_widget, Widget, Widget_trait, widgets::layout::axis::Axis},
+    widget::{
+        Focus_provider, Widget, Widget_trait,
+        widgets::{
+            layout::axis::Axis,
+            linebreak::Linebreak,
+            positioning::anchor::{Anchor, Anchors},
+            scroll::Scroll,
+        },
+    },
 };
 
 #[derive(Clone)]
 pub struct Builder {
-    target_tree: Shared_widget<Target_tree>,
+    target_tree: Widget,
     selected_dependency: State<Option<Dependency>>,
     build_result: State<Option<std::result::Result<(), String>>>,
 }
@@ -34,22 +42,21 @@ pub fn new(
     render: vizual::Render,
 ) -> Builder {
     let build_result = render.new_state(None);
+    let targets = dependencies.clone();
 
-    /*let _ = tokio::spawn(async move {
-        let result = root_clone
-            .ensure_ran(&view)
-            .await
-            .map_err(|error| error.to_string());
-        build_result_handle.store(Some(result));
-    });*/
+    let _ = tokio::spawn(async move {
+        for target in targets {
+            let result = target.ensure_ran().await.map_err(|error| error.to_string());
+        }
+    });
 
     let selected_dependency = render.new_state(dependencies.first().cloned());
     let target_tree =
         Target_tree::new(dependencies, selected_dependency.clone(), working_directory);
-    // let target_tree = Scroll::new(target_tree);
+    let target_tree = Box::new(Scroll::new(target_tree));
 
     Builder {
-        target_tree: target_tree.into_shared(),
+        target_tree,
         selected_dependency,
         build_result,
     }
@@ -139,7 +146,8 @@ impl Widget_trait for Builder {
 
         if let Some(dependency) = &*self.selected_dependency.load() {
             if let Some(widget) = dependency.widget() {
-                children.push(widget)
+                children.push(Box::new(Linebreak::new(Direction::Vertical)));
+                children.push(Box::new(Anchor::new(widget, Anchors::top_left())))
             }
         }
 

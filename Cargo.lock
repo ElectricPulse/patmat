@@ -4894,7 +4894,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 [[package]]
 name = "vizual"
 version = "0.1.0"
-source = "git+https://github.com/ElectricPulse/vizual#8fe76d5f3e1606e890cac6cc59f14a44aa27fdda"
+source = "git+https://github.com/ElectricPulse/vizual#173a07c0b5d7faebbecfb198f8e4cb08f2c9f316"
 dependencies = [
  "ambassador",
  "arc-swap",
@@ -4927,7 +4927,7 @@ dependencies = [
 [[package]]
 name = "vizual-macros"
 version = "0.1.0"
-source = "git+https://github.com/ElectricPulse/vizual#8fe76d5f3e1606e890cac6cc59f14a44aa27fdda"
+source = "git+https://github.com/ElectricPulse/vizual#173a07c0b5d7faebbecfb198f8e4cb08f2c9f316"
 dependencies = [
  "proc-macro2",
  "quote",

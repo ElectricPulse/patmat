@@ -21,7 +21,7 @@ impl Task {
 impl task::Task_trait for Task {
     type Output = ();
 
-    async fn run(&self, manager: &mut task::Manager<'_>) -> task::Task_result {
+    async fn run(&self) -> task::Task_result {
         // Check current branch silently
         let output = Command::new("git")
             .arg("branch")
@@ -48,7 +48,7 @@ impl task::Task_trait for Task {
             self.repo_path.clone(),
         );
 
-        let result = terminal_task.run(manager).await;
+        let result = terminal_task.run().await;
         result
     }
 }

@@ -20,7 +20,7 @@ impl Task {
 impl task::Task_trait for Task {
     type Output = ();
 
-    async fn run(&self, manager: &mut task::Manager<'_>) -> task::Task_result {
+    async fn run(&self) -> task::Task_result {
         // Get current commit hash silently
         let output = Command::new("git")
             .arg("rev-parse")
@@ -42,7 +42,7 @@ impl task::Task_trait for Task {
         let terminal_task = terminal::task::Task::new_in_dir("git pull", self.repo_path.clone());
 
         let result = {
-            let result = terminal_task.run(manager).await;
+            let result = terminal_task.run().await;
             result?
         };
 

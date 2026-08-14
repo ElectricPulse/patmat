@@ -30,7 +30,7 @@ impl Task {
 impl task::Task_trait for Task {
     type Output = ();
 
-    async fn run(&self, _manager: &mut task::Manager<'_>) -> task::Task_result {
+    async fn run(&self) -> task::Task_result {
         let mut command = Command::new("/bin/bash");
         let _ = command.arg("-c").arg(&self.command);
         if let Some(working_dir) = &self.working_dir {

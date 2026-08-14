@@ -15,7 +15,7 @@ pub(super) struct Copy_file_task {
 #[async_trait]
 impl task::Task_trait for Copy_file_task {
     type Output = ();
-    async fn run(&self, _manager: &mut task::Manager<'_>) -> task::Task_result {
+    async fn run(&self) -> task::Task_result {
         let _ = tokio::fs::copy(&self.source, &self.destination)
             .await
             .wrap_err(format!(
@@ -36,7 +36,7 @@ pub(super) struct Copy_dir_task {
 #[async_trait]
 impl task::Task_trait for Copy_dir_task {
     type Output = ();
-    async fn run(&self, _manager: &mut task::Manager<'_>) -> task::Task_result {
+    async fn run(&self) -> task::Task_result {
         // Check if dest already exists
         if self.destination.exists()
             && let Some(content) = self.destination.read_dir()?.next()
@@ -76,7 +76,7 @@ pub(super) struct Create_dir_task {
 #[async_trait]
 impl task::Task_trait for Create_dir_task {
     type Output = ();
-    async fn run(&self, _manager: &mut task::Manager<'_>) -> task::Task_result {
+    async fn run(&self) -> task::Task_result {
         if self.path.exists() {
             return Ok(((), task::Status::Already_built));
         }
@@ -98,7 +98,7 @@ pub(super) struct Write_file_task {
 #[async_trait]
 impl task::Task_trait for Write_file_task {
     type Output = ();
-    async fn run(&self, _manager: &mut task::Manager<'_>) -> task::Task_result {
+    async fn run(&self) -> task::Task_result {
         // Check if file exists with same content
         if self.path.exists()
             && let Ok(existing_content) = tokio::fs::read_to_string(&self.path).await
@@ -131,7 +131,7 @@ pub(super) struct Create_directory_task {
 #[async_trait]
 impl task::Task_trait for Create_directory_task {
     type Output = PathBuf;
-    async fn run(&self, _manager: &mut task::Manager<'_>) -> task::Task_result<PathBuf> {
+    async fn run(&self) -> task::Task_result<PathBuf> {
         if self.path.exists() {
             return Ok((self.path.clone(), task::Status::Already_built));
         }

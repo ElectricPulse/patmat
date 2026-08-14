@@ -35,7 +35,7 @@ impl Task {
 impl task::Task_trait for Task {
     type Output = ();
 
-    async fn run(&self, manager: &mut task::Manager<'_>) -> task::Task_result {
+    async fn run(&self) -> task::Task_result {
         let git_dir = self.path.join(".git");
 
         let git_directory_exists = git_dir
@@ -43,12 +43,10 @@ impl task::Task_trait for Task {
             .wrap_err_with(|| format!("Failed to inspect {}", git_dir.display()))?;
         if git_directory_exists && git_dir.is_dir() {
             self.progress.store(Arc::new(Clone_progress::Complete));
-            manager.view.refresh();
             return Ok(((), task::Status::Already_built));
         }
 
         self.progress.store(Arc::new(Clone_progress::Starting));
-        manager.view.refresh();
 
         let progress = gix::progress::tree::Root::new();
         let worker_progress = Arc::clone(&progress);
@@ -70,7 +68,6 @@ impl task::Task_trait for Task {
                     let snapshot = Clone_progress::from_tree(&progress);
                     if self.progress.load_full().as_ref() != &snapshot {
                         self.progress.store(Arc::new(snapshot));
-                        manager.view.refresh();
                     }
                 }
             }
@@ -79,13 +76,11 @@ impl task::Task_trait for Task {
         match result {
             Ok(()) => {
                 self.progress.store(Arc::new(Clone_progress::Complete));
-                manager.view.refresh();
                 Ok(((), task::Status::Built))
             }
             Err(error) => {
                 self.progress
                     .store(Arc::new(Clone_progress::Failed(format!("{error:#}"))));
-                manager.view.refresh();
                 Err(error)
             }
         }

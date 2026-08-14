@@ -12,10 +12,7 @@ use std::{
     },
 };
 
-use crate::target::{
-    status::Target_status,
-    task::{Manager, Task_trait, View},
-};
+use crate::target::{status::Target_status, task::Task_trait};
 use color_eyre::eyre::{Result, eyre};
 use vizual::{
     sync::{Mutex, Thread_safe},
@@ -49,30 +46,26 @@ struct Task_manager<Output: Output_constraints> {
 // We don't close the task even though we don't need it during dependency execution
 // because we want any one else waiting for .get() to have to wait for the output not start executing dependencies or the task again
 impl<Output: Output_constraints> Task_manager<Output> {
-    async fn get(&mut self, view: &View) -> Result<Output> {
+    async fn get(&mut self) -> Result<Output> {
         if let Some(output) = &self.output {
             return Ok(output.clone());
         }
 
         self.set_status(Target_status::Running_dependencies).await?;
-        view.refresh();
 
         let dependencies = self.metadata.lock().await?.dependencies.clone();
 
         for dependency in dependencies {
-            dependency.ensure_ran(view).await?;
+            dependency.ensure_ran().await?;
         }
 
         self.set_status(Target_status::Running).await?;
-        view.refresh();
 
-        let mut manager = Manager::new(view);
-        let result = self.task.run(&mut manager).await;
+        let result = self.task.run().await;
 
         let (output, status) = match result {
             Err(err) => {
                 self.set_status(Target_status::Error(Arc::new(err))).await?;
-                view.refresh();
                 return Err(eyre!("Task failed"));
             }
             Ok(result) => result,
@@ -80,7 +73,6 @@ impl<Output: Output_constraints> Task_manager<Output> {
 
         self.set_status(Target_status::Satisfied(status)).await?;
         self.output = Some(output.clone());
-        view.refresh();
 
         Ok(output)
     }
@@ -95,7 +87,7 @@ impl<Output: Output_constraints> Task_manager<Output> {
 // Since Targets are clonable and aren't in an Arc, Target trait should also be clonable
 pub trait Target_trait: DynClone + Send + Sync {
     async fn get_metadata(&self) -> Result<Target_metadata>;
-    async fn ensure_ran(&self, view: &View) -> Result<()>;
+    async fn ensure_ran(&self) -> Result<()>;
     fn widget(&self) -> Option<Widget>;
 }
 
@@ -171,8 +163,8 @@ impl<Output: Output_constraints> Target<Output> {
         self.widget = Some(Box::new(widget));
     }
 
-    pub async fn get(&self, view: &View) -> Result<Output> {
-        self.task.lock().await?.get(view).await
+    pub async fn get(&self) -> Result<Output> {
+        self.task.lock().await?.get().await
     }
 }
 
@@ -192,8 +184,8 @@ impl<Output: Output_constraints> Target_trait for Target<Output> {
         self.widget.clone()
     }
 
-    async fn ensure_ran(&self, view: &View) -> Result<()> {
-        let _ = self.get(view).await?;
+    async fn ensure_ran(&self) -> Result<()> {
+        let _ = self.get().await?;
         Ok(())
     }
 }

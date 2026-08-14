@@ -539,7 +539,7 @@ impl<T: Tree> Widget_trait for Configurator<T> {
                     Direction::Vertical,
                     vec![
                         Box::new(description),
-                        Box::new(Linebreak::new()),
+                        Box::new(Linebreak::new(Direction::Horizontal)),
                         leaf.widget,
                     ],
                 );
