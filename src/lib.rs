@@ -24,6 +24,7 @@ use vizual::{
         widgets::{
             layout::axis::Axis,
             linebreak::Linebreak,
+            paragraph::Paragraph,
             positioning::anchor::{Anchor, Anchors, Position},
             scroll::Scroll,
             text::Text,
@@ -79,7 +80,7 @@ impl Widget_trait for Builder {
 
         if let Some(dependency) = &*self.selected_dependency.affect(render.clone()).await? {
             let metadata = dependency.get_metadata();
-            let name = metadata.name.affect(render.clone()).await?.clone();
+            let name_content = metadata.name.affect(render.clone()).await?.clone();
             let path = metadata
                 .path
                 .affect(render.clone())
@@ -91,9 +92,9 @@ impl Widget_trait for Builder {
                 );
             let status = metadata.status.affect(render.clone()).await?.label();
 
-            let mut name = Text::new(name);
-            name.style
-                .set(theme.affect(render).await?.specific.text.title);
+            let theme = theme.affect(render).await?;
+            let mut name = Paragraph::new(Direction::Horizontal, theme.units.em * 15.0);
+            name.set_styled_content(name_content, theme.specific.text.title);
 
             let metadata = Axis::new(
                 Direction::Vertical,
