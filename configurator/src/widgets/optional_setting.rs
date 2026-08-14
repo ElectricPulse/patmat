@@ -8,7 +8,7 @@ use vizual::{
     handlers::Retrieve_handler,
     layouter::hitbox::Hitbox,
     slot::manager::Slots,
-    state::State,
+    state::{State, Store},
     sync::Thread_safe,
     theme::Theme,
     widget::{
@@ -17,7 +17,7 @@ use vizual::{
         widgets::{
             layout::axis::Axis,
             menu::{Menu, Shared_menu_item, get_selector},
-            positioning::anchor::{Anchor, Anchors},
+            positioning::anchor::Anchor,
             text::Text,
         },
     },
@@ -45,8 +45,8 @@ impl<Value: Thread_safe> Custom_widget_trait for Default_leaf_value<Value> {
 
     async fn layout(
         &mut self,
-        _render: vizual::Render,
-        theme: State<Theme>,
+        render: vizual::Render,
+        theme: Store<Theme>,
         _focus: &mut Focus_provider,
         _hitbox: &mut Hitbox,
         _parent: Hitbox,
@@ -55,10 +55,11 @@ impl<Value: Thread_safe> Custom_widget_trait for Default_leaf_value<Value> {
         slots: &mut Slots,
         selected: bool,
     ) -> Result<Children> {
+        let theme = theme.affect(render).await?;
         let mut text = Text::new(format!("Default - {}", self.label));
         text.style.set(match selected {
-            true => theme.load().specific.text.selected_subtitle,
-            false => theme.load().specific.text.subtitle,
+            true => theme.specific.text.selected_subtitle,
+            false => theme.specific.text.subtitle,
         });
 
         Ok(vec![display!(text)])
@@ -90,8 +91,8 @@ impl<Value: Thread_safe> Custom_widget_trait for Custom_leaf_value<Value> {
 
     async fn layout(
         &mut self,
-        _render: vizual::Render,
-        theme: State<Theme>,
+        render: vizual::Render,
+        theme: Store<Theme>,
         _focus: &mut Focus_provider,
         _hitbox: &mut Hitbox,
         _parent: Hitbox,
@@ -100,19 +101,20 @@ impl<Value: Thread_safe> Custom_widget_trait for Custom_leaf_value<Value> {
         slots: &mut Slots,
         selected: bool,
     ) -> Result<Children> {
+        let theme = theme.affect(render).await?;
         let mut title = Text::new("Custom");
 
         title.style.set(match selected {
-            true => theme.load().specific.text.selected_subtitle,
-            false => theme.load().specific.text.subtitle,
+            true => theme.specific.text.selected_subtitle,
+            false => theme.specific.text.subtitle,
         });
 
         if !selected {
             return Ok(vec![display!(title)]);
         }
 
-        let title = Anchor::new(title, Anchors::left());
-        let field = Anchor::new(self.field.clone(), Anchors::left());
+        let title = Anchor::left(title);
+        let field = Anchor::left(self.field.clone());
 
         let contents: Vec<Widget> = vec![Box::new(title), Box::new(field)];
         let axis = Axis::new(Direction::Vertical, contents);
@@ -131,7 +133,6 @@ impl<Value: Clone + Thread_safe> Optional_setting<Value> {
         default_value: impl Into<String>,
         is_default: bool,
         field: impl Field<Value> + 'static,
-        render: vizual::Render,
     ) -> Self {
         let field = Widget_trait::into_shared(Box::new(field) as Box<dyn Field<Value>>);
         let default_item: Shared_menu_item<Option<Value>> = Default_leaf_value {
@@ -144,7 +145,7 @@ impl<Value: Clone + Thread_safe> Optional_setting<Value> {
             Custom_leaf_value { field }.into_shared().into();
         let items = vec![default_item, custom_item];
         let default_item = get_selector(&items[usize::from(!is_default)]);
-        let menu = Widget_trait::into_shared(Menu::new(items, default_item, render));
+        let menu = Widget_trait::into_shared(Menu::new(items, default_item));
 
         Self { menu }
     }
@@ -155,7 +156,7 @@ impl<Value: Clone + Thread_safe> Widget_trait for Optional_setting<Value> {
     async fn layout(
         &mut self,
         _render: vizual::Render,
-        _theme: State<Theme>,
+        _theme: Store<Theme>,
         _focus: &mut Focus_provider,
         _hitbox: &mut Hitbox,
         _parent: Hitbox,

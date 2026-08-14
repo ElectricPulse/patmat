@@ -8,16 +8,11 @@ use vizual::{
     graphics::{scene::Scene, text::Text_context},
     layouter::hitbox::Hitbox,
     slot::manager::Slots,
-    state::State,
+    state::{State, Store},
     theme::Theme,
     widget::{
         Focus_provider, Widget, Widget_trait,
-        widgets::{
-            layout::axis::Axis,
-            paper::Paper,
-            positioning::anchor::{Anchor, Anchors},
-            text::Text,
-        },
+        widgets::{layout::axis::Axis, paper::Paper, positioning::anchor::Anchor, text::Text},
     },
 };
 use vizual_macros::display;
@@ -114,8 +109,8 @@ impl Clone_progress_widget {
 impl Widget_trait for Clone_progress_widget {
     async fn layout(
         &mut self,
-        _render: vizual::Render,
-        theme: State<Theme>,
+        render: vizual::Render,
+        theme: Store<Theme>,
         _focus: &mut Focus_provider,
         _hitbox: &mut Hitbox,
         _parent: Hitbox,
@@ -125,45 +120,45 @@ impl Widget_trait for Clone_progress_widget {
     ) -> Result<Children> {
         let progress = self.progress.load();
         let mut title = Text::new("Cloning repository");
-        title.style.set(theme.load().specific.text.subtitle);
-        let mut children: Vec<Widget> = vec![left_aligned(title)];
+        title
+            .style
+            .set(theme.affect(render).await?.specific.text.subtitle);
+        let mut children: Vec<Widget> = vec![Box::new(Anchor::left(title))];
 
         match &**progress {
             Clone_progress::Starting => {
-                children.push(left_aligned(Text::new("0%")));
+                children.push(Box::new(Anchor::left(Text::new("0%"))));
                 children.push(Box::new(Progress_bar::new(0.0)));
             }
             Clone_progress::Running(rows) if rows.is_empty() => {
-                children.push(left_aligned(Text::new("0%")));
+                children.push(Box::new(Anchor::left(Text::new("0%"))));
                 children.push(Box::new(Progress_bar::new(0.0)));
             }
             Clone_progress::Running(rows) => {
                 for row in rows {
-                    children.push(left_aligned(Text::new(format!(
+                    children.push(Box::new(Anchor::left(Text::new(format!(
                         "{}: {}",
                         row.name, row.value
-                    ))));
+                    )))));
                     if let Some(fraction) = row.fraction {
                         children.push(Box::new(Progress_bar::new(fraction)));
                     }
                 }
             }
-            Clone_progress::Complete => children.push(left_aligned(Text::new("Clone complete"))),
+            Clone_progress::Complete => {
+                children.push(Box::new(Anchor::left(Text::new("Clone complete"))));
+            }
             Clone_progress::Failed(error) => {
-                children.push(left_aligned(Text::new(format!(
+                children.push(Box::new(Anchor::left(Text::new(format!(
                     "Clone failed: {}",
                     single_line(error)
-                ))));
+                )))));
             }
         }
 
         let content = Axis::new(Direction::Vertical, children);
         Ok(vec![display!(Paper::new(content))])
     }
-}
-
-fn left_aligned(widget: impl Widget_trait) -> Widget {
-    Box::new(Anchor::new(widget, Anchors::left()))
 }
 
 #[derive(Clone, Copy)]
@@ -184,7 +179,7 @@ impl Widget_trait for Progress_bar {
     async fn layout(
         &mut self,
         _render: vizual::Render,
-        _theme: State<Theme>,
+        _theme: Store<Theme>,
         _focus: &mut Focus_provider,
         hitbox: &mut Hitbox,
         _parent: Hitbox,
@@ -205,14 +200,15 @@ impl Widget_trait for Progress_bar {
 
     async fn render(
         &mut self,
-        theme: State<Theme>,
+        render: vizual::Render,
+        theme: Store<Theme>,
         _focus: &mut Focus_provider,
         hitbox: Rect,
         scene: &mut Scene<'_>,
         _text_context: &mut Text_context,
         _context: &Render_context<'_>,
     ) -> Result<Option<Hitbox>> {
-        let theme = theme.load();
+        let theme = theme.affect(render).await?;
         let radius = hitbox.size.height / 2.0;
         scene.fill_rounded_rect(hitbox, theme.semantic.border, radius);
 

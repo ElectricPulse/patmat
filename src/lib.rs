@@ -10,6 +10,7 @@ use vizual_macros::display;
 use crate::{
     target::{Dependencies, Dependency},
     ui::target_tree::Target_tree,
+    utils::display_target_path,
 };
 use vizual::{
     self,
@@ -17,48 +18,47 @@ use vizual::{
     geometry::Direction,
     layouter::hitbox::Hitbox,
     slot::manager::Slots,
-    state::State,
+    state::{State, Store},
     widget::{
-        Focus_provider, Widget, Widget_trait,
+        Focus_provider, Shared_widget, Widget, Widget_trait,
         widgets::{
             layout::axis::Axis,
             linebreak::Linebreak,
-            positioning::anchor::{Anchor, Anchors},
+            positioning::anchor::{Anchor, Anchors, Position},
             scroll::Scroll,
+            text::Text,
         },
     },
 };
 
 #[derive(Clone)]
 pub struct Builder {
-    target_tree: Widget,
-    selected_dependency: State<Option<Dependency>>,
-    build_result: State<Option<std::result::Result<(), String>>>,
+    target_tree: Shared_widget<Scroll>,
+    selected_dependency: Store<Option<Dependency>>,
+    working_directory: PathBuf,
 }
 
-pub fn new(
-    dependencies: Dependencies,
-    working_directory: PathBuf,
-    render: vizual::Render,
-) -> Builder {
-    let build_result = render.new_state(None);
+pub fn new(dependencies: Dependencies, working_directory: PathBuf) -> Builder {
     let targets = dependencies.clone();
 
     let _ = tokio::spawn(async move {
         for target in targets {
-            let result = target.ensure_ran().await.map_err(|error| error.to_string());
+            let _ = target.ensure_ran().await;
         }
     });
 
-    let selected_dependency = render.new_state(dependencies.first().cloned());
-    let target_tree =
-        Target_tree::new(dependencies, selected_dependency.clone(), working_directory);
-    let target_tree = Box::new(Scroll::new(target_tree));
+    let selected_dependency = Store::new(dependencies.first().cloned());
+    let target_tree = Target_tree::new(
+        dependencies,
+        selected_dependency.clone(),
+        working_directory.clone(),
+    );
+    let target_tree = Scroll::new(target_tree).into_shared();
 
     Builder {
         target_tree,
         selected_dependency,
-        build_result,
+        working_directory,
     }
 }
 
@@ -66,8 +66,8 @@ pub fn new(
 impl Widget_trait for Builder {
     async fn layout(
         &mut self,
-        _render: vizual::Render,
-        _theme: vizual::state::State<vizual::theme::Theme>,
+        render: vizual::Render,
+        theme: vizual::state::Store<vizual::theme::Theme>,
         _focus: &mut Focus_provider,
         _hitbox: &mut Hitbox,
         _parent: Hitbox,
@@ -75,83 +75,60 @@ impl Widget_trait for Builder {
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
     ) -> Result<Children> {
-        /*
-
-        if let Some(mut error_lines) = self.get_target_errors(&targets) {
-            if self.error.is_none() {
-                self.error = Some(Paragraph::new().into_shared());
-            }
-
-            error_lines.push(String::new());
-            let error_text = error_lines.join("\n");
-            self.error
-                .as_mut()
-                .expect("error paragraph should exist when errors are present")
-                .lock()
-                .await?
-                .set_content(error_text);
-        } else {
-            self.error = None;
-        }
-
-        let target_menu = self.target_menu.clone();
-        let target_menu = Title_block::new(display!(target_menu), "Build", self.theme.clone());
-        let mut detail_elements = Vec::new();
-        if let Some(widget) = selected_widget {
-            detail_elements.push(display!(widget));
-        }
-        if let Some(error) = &self.error {
-            let error = error.clone();
-            let error = Title_block::new(display!(error), "Error in tasks", self.theme.clone());
-            detail_elements.push(display!(error));
-        }
-
-        let detail = Axis::new(
-            Direction::Vertical,
-            detail_elements,
-            Axis_style::default(self.theme.clone()),
-            Objective::default(),
-            2,
-        );
-
-        let main = Axis::new(
-            Direction::Horizontal,
-            vec![display!(target_menu), display!(detail)],
-            Axis_style::default(self.theme.clone()),
-            Objective::default(),
-            2,
-        );
-
-        let mut rows = Vec::new();
-        if let Some(result) = self.build_result.load().as_ref() {
-            let message = match result {
-                Ok(()) => "Build has stopped successfully".to_string(),
-                Err(error) => format!("Build has stopped unsuccessfully: {error}"),
-            };
-            let status = Text::new(message).set_style(self.theme.load().semantic.text.paragraph());
-            let linebreak = Linebreak::new(self.theme.clone());
-            rows.push(display!(status));
-            rows.push(display!(linebreak));
-        }
-        rows.push(display!(main));
-        let axis = Axis::new(
-            Direction::Vertical,
-            rows,
-            Axis_style::default(self.theme.clone()),
-            Objective::default(),
-            2,
-        );*/
-
         let mut children: Vec<Widget> = vec![Box::new(self.target_tree.clone())];
 
-        if let Some(dependency) = &*self.selected_dependency.load() {
+        if let Some(dependency) = &*self.selected_dependency.affect(render.clone()).await? {
+            let metadata = dependency.get_metadata();
+            let name = metadata.name.affect(render.clone()).await?.clone();
+            let path = metadata
+                .path
+                .affect(render.clone())
+                .await?
+                .as_ref()
+                .map_or_else(
+                    || "None".to_owned(),
+                    |path| display_target_path(path, &self.working_directory),
+                );
+            let status = metadata.status.affect(render.clone()).await?.label();
+
+            let mut name = Text::new(name);
+            name.style
+                .set(theme.affect(render).await?.specific.text.title);
+
+            let metadata = Axis::new(
+                Direction::Vertical,
+                vec![
+                    Box::new(Anchor::left(name)),
+                    Box::new(Anchor::left(Text::new(format!("Path: {path}")))),
+                    Box::new(Anchor::left(Text::new(format!("Status: {status}")))),
+                ],
+            );
+            let mut panel: Vec<Widget> = vec![Box::new(metadata)];
             if let Some(widget) = dependency.widget() {
-                children.push(Box::new(Linebreak::new(Direction::Vertical)));
-                children.push(Box::new(Anchor::new(widget, Anchors::top_left())))
+                panel.push(Box::new(Linebreak::new(Direction::Horizontal)));
+                panel.push(widget);
             }
+
+            let panel = Axis::new(Direction::Vertical, panel);
+            children.push(Box::new(Linebreak::new(Direction::Vertical)));
+            children.push(Box::new(Anchor::new(
+                panel,
+                Anchors {
+                    horizontal: None,
+                    vertical: Some(Position::Start),
+                },
+            )));
         }
 
-        let axis = Axis::new(Direction::Horizontal, children);
+        let content = Axis::new(Direction::Horizontal, children);
+        let working_directory = Anchor::left(Text::new(format!(
+            "Working directory: {}",
+            self.working_directory.display()
+        )));
+        let axis = Axis::new(
+            Direction::Vertical,
+            vec![Box::new(working_directory), Box::new(content)],
+        );
 
         Ok(vec![display!(axis)])
     }

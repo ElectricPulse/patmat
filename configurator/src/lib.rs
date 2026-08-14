@@ -26,7 +26,7 @@ use vizual::{
     handlers::{Retrieve_handler, Submit_handler},
     layouter::hitbox::Hitbox,
     slot::{Component_slot, manager::Slots},
-    state::State,
+    state::{State, Store},
     sync::{Mutex, Thread_safe},
     theme::Theme,
     widget::{
@@ -67,7 +67,7 @@ impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
     async fn layout(
         &mut self,
         render: vizual::Render,
-        theme: State<Theme>,
+        theme: Store<Theme>,
         focus: &mut Focus_provider,
         hitbox: &mut Hitbox,
         parent: Hitbox,
@@ -91,7 +91,8 @@ impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
 
     async fn render(
         &mut self,
-        theme: State<Theme>,
+        render: vizual::Render,
+        theme: Store<Theme>,
         focus: &mut Focus_provider,
         hitbox: Rect,
         scene: &mut Scene<'_>,
@@ -99,7 +100,7 @@ impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
         context: &vizual::component::Render_context<'_>,
     ) -> Result<Option<Hitbox>> {
         (**self)
-            .render(theme, focus, hitbox, scene, text_context, context)
+            .render(render, theme, focus, hitbox, scene, text_context, context)
             .await
     }
 
@@ -229,7 +230,7 @@ impl<T: Tree> Tree_view<T> {
         node: &Configuration_tree_branch,
         selected_cursor: &[String],
         cursor: &[String],
-        theme: State<Theme>,
+        theme: &Theme,
         problem: &Component_context,
         button_delta: vizual::layouter::variable::Variable,
     ) -> Result<Vec<Widget>> {
@@ -244,8 +245,8 @@ impl<T: Tree> Tree_view<T> {
 
             let mut text = Text::new(name);
             text.style.set(match selected_cursor == child_cursor {
-                true => theme.load().specific.text.selected_subtitle,
-                false => theme.load().specific.text.subtitle,
+                true => theme.specific.text.selected_subtitle,
+                false => theme.specific.text.subtitle,
             });
 
             let mut button = Button::new(
@@ -259,7 +260,7 @@ impl<T: Tree> Tree_view<T> {
             button.delta = Some(button_delta.clone());
 
             let button = Space::left(button, (INDENT * depth) as f64, 1);
-            let button = Anchor::new(button, Anchors::left());
+            let button = Anchor::left(button);
 
             buttons.push(Box::new(button));
 
@@ -269,7 +270,7 @@ impl<T: Tree> Tree_view<T> {
                         branch,
                         selected_cursor,
                         &child_cursor,
-                        theme.clone(),
+                        theme,
                         problem,
                         button_delta.clone(),
                     )
@@ -319,8 +320,8 @@ impl<T: Tree> Tree_view<T> {
 impl<T: Tree> Widget_trait for Tree_view<T> {
     async fn layout(
         &mut self,
-        _render: vizual::Render,
-        theme: State<Theme>,
+        render: vizual::Render,
+        theme: Store<Theme>,
         focus: &mut Focus_provider,
         _hitbox: &mut Hitbox,
         _parent: Hitbox,
@@ -334,9 +335,10 @@ impl<T: Tree> Widget_trait for Tree_view<T> {
             .add_delta("configurator-tree-button-delta", 1)
             .await?;
 
+        let theme = (*theme.affect(render).await?).clone();
         let tree = self.tree.lock().await?.get_tree();
         let buttons = self
-            .render_tree(&tree, &cursor, &[], theme, &problem, button_delta)
+            .render_tree(&tree, &cursor, &[], &theme, &problem, button_delta)
             .await?;
 
         let axis = Axis::new(Direction::Vertical, buttons);
@@ -347,7 +349,8 @@ impl<T: Tree> Widget_trait for Tree_view<T> {
 
     async fn render(
         &mut self,
-        _theme: State<Theme>,
+        _render: vizual::Render,
+        _theme: Store<Theme>,
         focus: &mut Focus_provider,
         _hitbox: Rect,
         _scene: &mut Scene<'_>,
@@ -476,7 +479,6 @@ pub fn configurator<T: Tree>(
     configuration_path: impl AsRef<Path>,
     tree: T,
     submit_handler: impl Submit_handler<bool>,
-    render: vizual::Render,
 ) -> Result<Configurator<T>> {
     let child_name = tree
         .get_tree()
@@ -502,7 +504,7 @@ pub fn configurator<T: Tree>(
         tree,
         configurator_state,
         config_manager: config_manager.clone(),
-        submit: Popup::new(config_manager, render).into_shared(),
+        submit: Popup::new(config_manager).into_shared(),
         submitting: false,
         popup_slot: Component_slot::new(),
     })
@@ -512,8 +514,8 @@ pub fn configurator<T: Tree>(
 impl<T: Tree> Widget_trait for Configurator<T> {
     async fn layout(
         &mut self,
-        _render: vizual::Render,
-        theme: State<Theme>,
+        render: vizual::Render,
+        theme: Store<Theme>,
         _focus: &mut Focus_provider,
         hitbox: &mut Hitbox,
         _parent: Hitbox,
@@ -533,7 +535,7 @@ impl<T: Tree> Widget_trait for Configurator<T> {
 
             if let Ok(leaf) = tree.get_tree().get_leaf(&cursor) {
                 let description = Text::new(leaf.description);
-                let description = Anchor::new(description, Anchors::left());
+                let description = Anchor::left(description);
 
                 let axis = Axis::new(
                     Direction::Vertical,
@@ -552,7 +554,8 @@ impl<T: Tree> Widget_trait for Configurator<T> {
             }
         };
 
-        let gap = theme.load().semantic.axis.gap;
+        let theme = theme.affect(render).await?;
+        let gap = theme.semantic.axis.gap;
         let tree_view = Anchor::new(
             tree_view,
             Anchors {
@@ -575,7 +578,7 @@ impl<T: Tree> Widget_trait for Configurator<T> {
         }
 
         let mut text = Text::new("Apply");
-        text.style.set(theme.load().specific.text.selected_subtitle);
+        text.style.set(theme.specific.text.selected_subtitle);
         let button = Button::new(text, self.config_manager.clone());
         let button = Anchor::new(
             button,

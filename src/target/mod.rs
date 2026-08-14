@@ -15,6 +15,7 @@ use std::{
 use crate::target::{status::Target_status, task::Task_trait};
 use color_eyre::eyre::{Result, eyre};
 use vizual::{
+    state::{State, Store},
     sync::{Mutex, Thread_safe},
     widget::{Widget, Widget_trait},
 };
@@ -28,18 +29,18 @@ static NEXT_TARGET_ID: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone)]
 pub struct Target_metadata {
-    pub(crate) id: u64,
-    pub(crate) name: String,
+    pub(crate) id: Store<u64>,
+    pub(crate) name: Store<String>,
     /// This path is only used to show the user roughly where the task is working.
-    pub(crate) path: Option<PathBuf>,
-    pub(crate) dependencies: Dependencies,
-    pub(crate) status: Target_status,
+    pub(crate) path: Store<Option<PathBuf>>,
+    pub(crate) dependencies: Store<Dependencies>,
+    pub(crate) status: Store<Target_status>,
 }
 
 struct Task_manager<Output: Output_constraints> {
     task: Task<Output>,
     output: Option<Output>,
-    metadata: Arc<Mutex<Target_metadata>>,
+    metadata: Target_metadata,
 }
 
 // Note that Task_manager get() will now block if a task is in progress
@@ -53,7 +54,7 @@ impl<Output: Output_constraints> Task_manager<Output> {
 
         self.set_status(Target_status::Running_dependencies).await?;
 
-        let dependencies = self.metadata.lock().await?.dependencies.clone();
+        let dependencies = self.metadata.dependencies.read().await?.clone();
 
         for dependency in dependencies {
             dependency.ensure_ran().await?;
@@ -78,7 +79,7 @@ impl<Output: Output_constraints> Task_manager<Output> {
     }
 
     async fn set_status(&self, status: Target_status) -> Result<()> {
-        self.metadata.lock().await?.status = status;
+        *self.metadata.status.write().await? = status;
         Ok(())
     }
 }
@@ -86,7 +87,7 @@ impl<Output: Output_constraints> Task_manager<Output> {
 #[async_trait]
 // Since Targets are clonable and aren't in an Arc, Target trait should also be clonable
 pub trait Target_trait: DynClone + Send + Sync {
-    async fn get_metadata(&self) -> Result<Target_metadata>;
+    fn get_metadata(&self) -> Target_metadata;
     async fn ensure_ran(&self) -> Result<()>;
     fn widget(&self) -> Option<Widget>;
 }
@@ -108,15 +109,17 @@ pub type Dependencies = Vec<Dependency>;
 // This is done because it simplifies the architecture.
 // Also a seperate non sharable target would at the cost of a lot of added complexity only offer a small performance benefit
 // of removing shared state that only really gets accessed in one place.
-// Task_manager needs to be a seperate lock from metadata while one needs to be able to access the metadata regardless of if a task is running
+// Task_manager remains separately locked while each metadata field is independently accessible
+// through its Store, even while a task is running.
 // Task_manager bundles output and task because there is no reason to try fetching the output when a task is in progress -
 // one has to wait till it's done seperately
-// that also means that task_state needs access to metadata shared state because when it's done it will need to quickly update the status
+// The task manager carries cloned Store handles so it can update status without owning the UI's
+// Target_metadata value.
 // Widget is a separate field because it must remain renderable while the task is locked during a
 // build. A widget that needs shared mutable state can carry that state itself.
 #[derive(Clone)]
 pub struct Target<Output: Output_constraints> {
-    metadata: Arc<Mutex<Target_metadata>>,
+    metadata: Target_metadata,
     task: Arc<Mutex<Task_manager<Output>>>,
     // The widget is intentionally separate from the task. The task manager stays locked for the
     // entire build, so a widget stored as the task itself could not be rendered while that build
@@ -140,13 +143,13 @@ impl<Output: Output_constraints> Target<Output> {
         task: impl Task_trait<Output = Output> + 'static,
         dependencies: Dependencies,
     ) -> Self {
-        let metadata = Arc::new(Mutex::new(Target_metadata {
-            id: NEXT_TARGET_ID.fetch_add(1, Ordering::Relaxed),
-            name: name.into(),
-            path,
-            dependencies,
-            status: Target_status::Unsatisfied,
-        }));
+        let metadata = Target_metadata {
+            id: Store::new(NEXT_TARGET_ID.fetch_add(1, Ordering::Relaxed)),
+            name: Store::new(name.into()),
+            path: Store::new(path),
+            dependencies: Store::new(dependencies),
+            status: Store::new(Target_status::Unsatisfied),
+        };
 
         Self {
             widget: None,
@@ -176,8 +179,8 @@ impl<Output: Output_constraints> From<Target<Output>> for Dependency {
 
 #[async_trait]
 impl<Output: Output_constraints> Target_trait for Target<Output> {
-    async fn get_metadata(&self) -> Result<Target_metadata> {
-        Ok(self.metadata.lock().await?.clone())
+    fn get_metadata(&self) -> Target_metadata {
+        self.metadata.clone()
     }
 
     fn widget(&self) -> Option<Widget> {
@@ -186,6 +189,40 @@ impl<Output: Output_constraints> Target_trait for Target<Output> {
 
     async fn ensure_ran(&self) -> Result<()> {
         let _ = self.get().await?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::target::task::{Status, Task_result};
+
+    struct Empty_task;
+
+    #[async_trait]
+    impl Task_trait for Empty_task {
+        type Output = ();
+
+        async fn run(&self) -> Task_result<Self::Output> {
+            Ok(((), Status::Built))
+        }
+    }
+
+    #[tokio::test]
+    async fn metadata_clones_share_each_store() -> Result<()> {
+        let target = Target::new_independent("before", None, Empty_task);
+        let metadata = target.get_metadata();
+
+        *metadata.name.write().await? = "after".to_owned();
+        *metadata.path.write().await? = Some(PathBuf::from("updated"));
+
+        let current = target.get_metadata();
+        assert_eq!(&*current.name.read().await?, "after");
+        assert_eq!(
+            current.path.read().await?.as_deref(),
+            Some(std::path::Path::new("updated"))
+        );
         Ok(())
     }
 }

@@ -16,6 +16,17 @@ pub enum Target_status {
 }
 
 impl Target_status {
+    pub fn label(&self) -> &'static str {
+        match self {
+            Target_status::Unsatisfied => "Unsatisfied",
+            Target_status::Running_dependencies => "Running dependencies",
+            Target_status::Running => "Running",
+            Target_status::Satisfied(Status::Built) => "Built",
+            Target_status::Satisfied(Status::Already_built) => "Already built",
+            Target_status::Error(_) => "Error",
+        }
+    }
+
     pub fn get_icon(&self) -> Icon {
         match self {
             Target_status::Unsatisfied => Icon::CircleDashed,

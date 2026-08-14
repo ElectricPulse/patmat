@@ -1,14 +1,14 @@
 use async_trait::async_trait;
 use color_eyre::Result;
 use derive_new::new;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use vizual::{
     component::{Children, context::Component_context},
     geometry::Direction,
     handlers::Retrieve_handler,
     layouter::hitbox::Hitbox,
     slot::manager::Slots,
-    state::State,
+    state::{State, Store},
     widget::{
         Focus_provider, Shared_widget, Widget, Widget_trait,
         custom_widget::Custom_widget_trait,
@@ -24,7 +24,7 @@ use vizual::{
 use vizual_macros::display;
 
 use crate::target::{Dependencies, Dependency};
-use crate::utils::get_targets;
+use crate::utils::{display_target_path, get_targets};
 
 #[derive(Clone, new)]
 struct Target_tree_item {
@@ -45,8 +45,8 @@ impl Custom_widget_trait for Target_tree_item {
 
     async fn layout(
         &mut self,
-        _render: vizual::Render,
-        _theme: State<vizual::theme::Theme>,
+        render: vizual::Render,
+        _theme: Store<vizual::theme::Theme>,
         _focus: &mut Focus_provider,
         _hitbox: &mut Hitbox,
         _parent: Hitbox,
@@ -55,9 +55,9 @@ impl Custom_widget_trait for Target_tree_item {
         slots: &mut Slots,
         _selected: bool,
     ) -> Result<Children> {
-        let metadata = self.target.get_metadata().await?;
+        let metadata = self.target.get_metadata();
 
-        let icon = Icon::new(metadata.status.get_icon());
+        let icon = Icon::new(metadata.status.affect(render.clone()).await?.get_icon());
         let icon = Anchor::new(
             icon,
             Anchors {
@@ -67,22 +67,20 @@ impl Custom_widget_trait for Target_tree_item {
         );
 
         let name = Text::new(metadata.name);
-        let name = Anchor::new(name, Anchors::left());
+        let name = Anchor::left(name);
 
         let mut details: Vec<Widget> = vec![Box::new(name)];
 
-        if let Some(path) = metadata.path {
-            let path = path
-                .strip_prefix(&self.working_directory)
-                .unwrap_or(path.as_path());
-            let path = display_relative_path(path);
-            let path = Text::new(format!("Working directory: {path}"));
-            let path = Anchor::new(path, Anchors::left());
+        let path = metadata.path.affect(render).await?.clone();
+        if let Some(path) = path {
+            let path = display_target_path(&path, &self.working_directory);
+            let path = Text::new(format!("- {path}"));
+            let path = Anchor::left(path);
             details.push(Box::new(path));
         }
 
         let details = Axis::new(Direction::Vertical, details);
-        let details = Anchor::new(details, Anchors::left());
+        let details = Anchor::left(details);
 
         let row = Axis::new(
             Direction::Horizontal,
@@ -96,7 +94,7 @@ impl Custom_widget_trait for Target_tree_item {
 #[derive(Clone)]
 pub struct Target_tree {
     dependencies: Dependencies,
-    selected: State<Option<Dependency>>,
+    selected: Store<Option<Dependency>>,
     working_directory: PathBuf,
     menu: Option<Shared_widget<Menu<Option<Dependency>>>>,
 }
@@ -104,7 +102,7 @@ pub struct Target_tree {
 impl Target_tree {
     pub fn new(
         dependencies: Dependencies,
-        selected: State<Option<Dependency>>,
+        selected: Store<Option<Dependency>>,
         working_directory: PathBuf,
     ) -> Self {
         Self {
@@ -121,7 +119,7 @@ impl Widget_trait for Target_tree {
     async fn layout(
         &mut self,
         render: vizual::Render,
-        _theme: State<vizual::theme::Theme>,
+        _theme: Store<vizual::theme::Theme>,
         _focus: &mut Focus_provider,
         _hitbox: &mut Hitbox,
         _parent: Hitbox,
@@ -130,7 +128,7 @@ impl Widget_trait for Target_tree {
         slots: &mut Slots,
     ) -> Result<Children> {
         if self.menu.is_none() {
-            let targets = get_targets(&self.dependencies)
+            let targets = get_targets(&self.dependencies, render.clone())
                 .await?
                 .into_iter()
                 .map(|target| -> Shared_menu_item<Option<Dependency>> {
@@ -145,7 +143,7 @@ impl Widget_trait for Target_tree {
             };
 
             let default_target = get_selector(first_target);
-            let mut menu = Menu::new(targets, default_target, render);
+            let mut menu = Menu::new(targets, default_target);
             menu.set_submit_state(self.selected.clone());
             self.menu = Some(Widget_trait::into_shared(menu));
         }
@@ -155,12 +153,5 @@ impl Widget_trait for Target_tree {
                 .clone()
                 .expect("target menu must exist after initialization")
         )])
-    }
-}
-
-fn display_relative_path(path: &Path) -> String {
-    match path.as_os_str().is_empty() {
-        true => ".".to_string(),
-        false => path.display().to_string(),
     }
 }
