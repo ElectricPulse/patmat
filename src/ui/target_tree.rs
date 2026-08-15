@@ -10,12 +10,12 @@ use vizual::{
     slot::manager::Slots,
     state::{State, Store},
     widget::{
-        Focus_provider, Shared_widget, Widget, Widget_trait,
+        Focus_provider, Widget, Widget_trait,
         custom_widget::Custom_widget_trait,
         widgets::{
             icon::Icon,
             layout::axis::Axis,
-            menu::{Menu, Shared_menu_item, get_selector},
+            menu::{Menu, Menu_item},
             positioning::anchor::{Anchor, Anchors, Position},
             text::Text,
         },
@@ -95,8 +95,8 @@ impl Custom_widget_trait for Target_tree_item {
 pub struct Target_tree {
     dependencies: Dependencies,
     selected: Store<Dependency>,
+    selected_index: Store<usize>,
     working_directory: PathBuf,
-    menu: Option<Shared_widget<Menu<Dependency>>>,
 }
 
 impl Target_tree {
@@ -108,8 +108,8 @@ impl Target_tree {
         Self {
             dependencies,
             selected,
+            selected_index: Store::new(0),
             working_directory,
-            menu: None,
         }
     }
 }
@@ -127,31 +127,24 @@ impl Widget_trait for Target_tree {
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
     ) -> Result<Children> {
-        if self.menu.is_none() {
-            let targets = get_targets(&self.dependencies, render.clone())
-                .await?
-                .into_iter()
-                .map(|target| -> Shared_menu_item<Dependency> {
-                    Target_tree_item::new(target, self.working_directory.clone())
-                        .into_shared()
-                        .into()
-                })
-                .collect::<Vec<_>>();
+        let targets = get_targets(&self.dependencies, render.clone())
+            .await?
+            .into_iter()
+            .map(|target| -> Menu_item<Dependency> {
+                Box::new(Target_tree_item::new(target, self.working_directory.clone()))
+            })
+            .collect::<Vec<_>>();
 
-            let Some(first_target) = targets.first() else {
-                return Ok(vec![]);
-            };
-
-            let default_target = get_selector(first_target);
-            let mut menu = Menu::new(targets, default_target).await?;
-            menu.submitted = self.selected.clone();
-            self.menu = Some(Widget_trait::into_shared(menu));
+        if targets.is_empty() {
+            return Ok(vec![]);
         }
 
-        Ok(vec![display!(
-            self.menu
-                .clone()
-                .expect("target menu must exist after initialization")
-        )])
+        let selected_index = *self.selected_index.read().await?;
+        let default_index = selected_index.min(targets.len().saturating_sub(1));
+        let mut menu = Menu::new(targets, default_index).await?;
+        menu.selected = self.selected_index.clone();
+        menu.submitted = self.selected.clone();
+
+        Ok(vec![display!(menu)])
     }
 }

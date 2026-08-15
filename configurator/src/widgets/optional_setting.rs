@@ -16,7 +16,7 @@ use vizual::{
         custom_widget::Custom_widget_trait,
         widgets::{
             layout::axis::Axis,
-            menu::{Menu, Shared_menu_item, get_selector},
+            menu::{Menu, Menu_item},
             positioning::anchor::Anchor,
             text::Text,
         },
@@ -151,20 +151,16 @@ impl<Value: Clone + Thread_safe> Optional_setting<Value> {
             return Ok(menu.clone());
         }
 
-        let default_item: Shared_menu_item<Option<Value>> = Default_leaf_value {
+        let default_item: Menu_item<Option<Value>> = Box::new(Default_leaf_value {
             label: self.default_value.clone(),
             value: PhantomData,
-        }
-        .into_shared()
-        .into();
-        let custom_item: Shared_menu_item<Option<Value>> = Custom_leaf_value {
+        });
+        let custom_item: Menu_item<Option<Value>> = Box::new(Custom_leaf_value {
             field: self.field.clone(),
-        }
-        .into_shared()
-        .into();
+        });
         let items = vec![default_item, custom_item];
-        let default_item = get_selector(&items[usize::from(!self.is_default)]);
-        let menu = Widget_trait::into_shared(Menu::new(items, default_item).await?);
+        let default_index = usize::from(!self.is_default);
+        let menu = Menu::new(items, default_index).await?.into_shared();
         self.menu = Some(menu.clone());
         Ok(menu)
     }
