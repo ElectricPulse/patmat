@@ -33,9 +33,9 @@ struct Target_tree_item {
 }
 
 #[async_trait::async_trait]
-impl Retrieve_handler<Option<Dependency>> for Target_tree_item {
-    async fn on_retrieve(&mut self) -> Result<Option<Dependency>> {
-        Ok(Some(self.target.clone()))
+impl Retrieve_handler<Dependency> for Target_tree_item {
+    async fn on_retrieve(&mut self) -> Result<Dependency> {
+        Ok(self.target.clone())
     }
 }
 
@@ -94,15 +94,15 @@ impl Custom_widget_trait for Target_tree_item {
 #[derive(Clone)]
 pub struct Target_tree {
     dependencies: Dependencies,
-    selected: Store<Option<Dependency>>,
+    selected: Store<Dependency>,
     working_directory: PathBuf,
-    menu: Option<Shared_widget<Menu<Option<Dependency>>>>,
+    menu: Option<Shared_widget<Menu<Dependency>>>,
 }
 
 impl Target_tree {
     pub fn new(
         dependencies: Dependencies,
-        selected: Store<Option<Dependency>>,
+        selected: Store<Dependency>,
         working_directory: PathBuf,
     ) -> Self {
         Self {
@@ -131,7 +131,7 @@ impl Widget_trait for Target_tree {
             let targets = get_targets(&self.dependencies, render.clone())
                 .await?
                 .into_iter()
-                .map(|target| -> Shared_menu_item<Option<Dependency>> {
+                .map(|target| -> Shared_menu_item<Dependency> {
                     Target_tree_item::new(target, self.working_directory.clone())
                         .into_shared()
                         .into()
@@ -143,8 +143,8 @@ impl Widget_trait for Target_tree {
             };
 
             let default_target = get_selector(first_target);
-            let mut menu = Menu::new(targets, default_target);
-            menu.set_submit_state(self.selected.clone());
+            let mut menu = Menu::new(targets, default_target).await?;
+            menu.submitted = self.selected.clone();
             self.menu = Some(Widget_trait::into_shared(menu));
         }
 

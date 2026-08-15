@@ -35,7 +35,7 @@ use vizual::{
 #[derive(Clone)]
 pub struct Builder {
     target_tree: Shared_widget<Scroll>,
-    selected_dependency: Store<Option<Dependency>>,
+    selected_dependency: Store<Dependency>,
     working_directory: PathBuf,
 }
 
@@ -48,7 +48,12 @@ pub fn new(dependencies: Dependencies, working_directory: PathBuf) -> Builder {
         }
     });
 
-    let selected_dependency = Store::new(dependencies.first().cloned());
+    let selected_dependency = Store::new(
+        dependencies
+            .first()
+            .cloned()
+            .expect("Dependencies must not be empty"),
+    );
     let target_tree = Target_tree::new(
         dependencies,
         selected_dependency.clone(),
@@ -78,48 +83,47 @@ impl Widget_trait for Builder {
     ) -> Result<Children> {
         let mut children: Vec<Widget> = vec![Box::new(self.target_tree.clone())];
 
-        if let Some(dependency) = &*self.selected_dependency.affect(render.clone()).await? {
-            let metadata = dependency.get_metadata();
-            let name_content = metadata.name.affect(render.clone()).await?.clone();
-            let path = metadata
-                .path
-                .affect(render.clone())
-                .await?
-                .as_ref()
-                .map_or_else(
-                    || "None".to_owned(),
-                    |path| display_target_path(path, &self.working_directory),
-                );
-            let status = metadata.status.affect(render.clone()).await?.label();
-
-            let theme = theme.affect(render).await?;
-            let mut name = Paragraph::new(Direction::Horizontal, theme.units.em * 15.0);
-            name.set_styled_content(name_content, theme.specific.text.title);
-
-            let metadata = Axis::new(
-                Direction::Vertical,
-                vec![
-                    Box::new(Anchor::left(name)),
-                    Box::new(Anchor::left(Text::new(format!("Path: {path}")))),
-                    Box::new(Anchor::left(Text::new(format!("Status: {status}")))),
-                ],
+        let dependency = &*self.selected_dependency.affect(render.clone()).await?;
+        let metadata = dependency.get_metadata();
+        let name_content = metadata.name.affect(render.clone()).await?.clone();
+        let path = metadata
+            .path
+            .affect(render.clone())
+            .await?
+            .as_ref()
+            .map_or_else(
+                || "None".to_owned(),
+                |path| display_target_path(path, &self.working_directory),
             );
-            let mut panel: Vec<Widget> = vec![Box::new(metadata)];
-            if let Some(widget) = dependency.widget() {
-                panel.push(Box::new(Linebreak::new(Direction::Horizontal)));
-                panel.push(widget);
-            }
+        let status = metadata.status.affect(render.clone()).await?.label();
 
-            let panel = Axis::new(Direction::Vertical, panel);
-            children.push(Box::new(Linebreak::new(Direction::Vertical)));
-            children.push(Box::new(Anchor::new(
-                panel,
-                Anchors {
-                    horizontal: None,
-                    vertical: Some(Position::Start),
-                },
-            )));
+        let theme = theme.affect(render).await?;
+        let mut name = Paragraph::new(Direction::Horizontal, theme.units.em * 15.0);
+        name.set_styled_content(name_content, theme.specific.text.title);
+
+        let metadata = Axis::new(
+            Direction::Vertical,
+            vec![
+                Box::new(Anchor::left(name)),
+                Box::new(Anchor::left(Text::new(format!("Path: {path}")))),
+                Box::new(Anchor::left(Text::new(format!("Status: {status}")))),
+            ],
+        );
+        let mut panel: Vec<Widget> = vec![Box::new(metadata)];
+        if let Some(widget) = dependency.widget() {
+            panel.push(Box::new(Linebreak::new(Direction::Horizontal)));
+            panel.push(widget);
         }
+
+        let panel = Axis::new(Direction::Vertical, panel);
+        children.push(Box::new(Linebreak::new(Direction::Vertical)));
+        children.push(Box::new(Anchor::new(
+            panel,
+            Anchors {
+                horizontal: None,
+                vertical: Some(Position::Start),
+            },
+        )));
 
         let content = Axis::new(Direction::Horizontal, children);
         let working_directory = Anchor::left(Text::new(format!(

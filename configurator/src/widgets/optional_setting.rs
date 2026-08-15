@@ -125,7 +125,10 @@ impl<Value: Thread_safe> Custom_widget_trait for Custom_leaf_value<Value> {
 
 #[derive_where(Clone)]
 pub struct Optional_setting<Value: Clone + Thread_safe> {
-    menu: Shared_widget<Menu<Option<Value>>>,
+    default_value: String,
+    is_default: bool,
+    field: Shared_widget<Box<dyn Field<Value>>>,
+    menu: Option<Shared_widget<Menu<Option<Value>>>>,
 }
 
 impl<Value: Clone + Thread_safe> Optional_setting<Value> {
@@ -135,19 +138,35 @@ impl<Value: Clone + Thread_safe> Optional_setting<Value> {
         field: impl Field<Value> + 'static,
     ) -> Self {
         let field = Widget_trait::into_shared(Box::new(field) as Box<dyn Field<Value>>);
+        Self {
+            default_value: default_value.into(),
+            is_default,
+            field,
+            menu: None,
+        }
+    }
+
+    async fn get_menu(&mut self) -> Result<Shared_widget<Menu<Option<Value>>>> {
+        if let Some(menu) = &self.menu {
+            return Ok(menu.clone());
+        }
+
         let default_item: Shared_menu_item<Option<Value>> = Default_leaf_value {
-            label: default_value.into(),
+            label: self.default_value.clone(),
             value: PhantomData,
         }
         .into_shared()
         .into();
-        let custom_item: Shared_menu_item<Option<Value>> =
-            Custom_leaf_value { field }.into_shared().into();
+        let custom_item: Shared_menu_item<Option<Value>> = Custom_leaf_value {
+            field: self.field.clone(),
+        }
+        .into_shared()
+        .into();
         let items = vec![default_item, custom_item];
-        let default_item = get_selector(&items[usize::from(!is_default)]);
-        let menu = Widget_trait::into_shared(Menu::new(items, default_item));
-
-        Self { menu }
+        let default_item = get_selector(&items[usize::from(!self.is_default)]);
+        let menu = Widget_trait::into_shared(Menu::new(items, default_item).await?);
+        self.menu = Some(menu.clone());
+        Ok(menu)
     }
 }
 
@@ -164,7 +183,7 @@ impl<Value: Clone + Thread_safe> Widget_trait for Optional_setting<Value> {
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
     ) -> Result<Children> {
-        let menu = self.menu.clone();
+        let menu = self.get_menu().await?;
         Ok(vec![display!(menu)])
     }
 }
@@ -172,6 +191,6 @@ impl<Value: Clone + Thread_safe> Widget_trait for Optional_setting<Value> {
 #[async_trait]
 impl<Value: Clone + Thread_safe> Retrieve_handler<Option<Value>> for Optional_setting<Value> {
     async fn on_retrieve(&mut self) -> Result<Option<Value>> {
-        self.menu.on_retrieve().await
+        self.get_menu().await?.on_retrieve().await
     }
 }

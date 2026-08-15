@@ -212,9 +212,9 @@ struct Field_click_handler {
 }
 
 #[async_trait]
-impl Submit_handler<String> for Field_click_handler {
+impl Submit_handler<bool> for Field_click_handler {
     // I don't use label here as I think this argument should later be removed
-    async fn on_submit(&mut self, _label: Option<String>) -> Result<Vizual_msg> {
+    async fn on_submit(&mut self, _focused: bool) -> Result<Vizual_msg> {
         self.configurator_state.lock().await?.cursor = self.cursor.clone();
 
         // This functionality of letting the mouse event bubble up to find the parent
@@ -448,14 +448,13 @@ impl<T: Tree> Config_manager<T> {
     }
 
     async fn complete(&mut self, should_save: bool) -> Result<Vizual_msg> {
-        self.submit_handler.on_submit(Some(should_save)).await
+        self.submit_handler.on_submit(should_save).await
     }
 }
 
 #[async_trait]
 impl<T: Tree> Submit_handler<bool> for Config_manager_handle<T> {
-    async fn on_submit(&mut self, should_save: Option<bool>) -> Result<Vizual_msg> {
-        let should_save = should_save.ok_or_else(|| eyre!("No popup action selected"))?;
+    async fn on_submit(&mut self, should_save: bool) -> Result<Vizual_msg> {
         let mut manager = self.manager.lock().await?;
 
         if should_save {
@@ -468,14 +467,14 @@ impl<T: Tree> Submit_handler<bool> for Config_manager_handle<T> {
 
 #[async_trait]
 impl<T: Tree> Submit_handler<String> for Config_manager_handle<T> {
-    async fn on_submit(&mut self, _label: Option<String>) -> Result<Vizual_msg> {
+    async fn on_submit(&mut self, _label: String) -> Result<Vizual_msg> {
         self.manager.lock().await?.save().await?;
         Vizual_msg::new(Vizual_command::Layout)
     }
 }
 
 /// Creates a configurator that optionally saves YAML to `configuration_path`.
-pub fn configurator<T: Tree>(
+pub async fn configurator<T: Tree>(
     configuration_path: impl AsRef<Path>,
     tree: T,
     submit_handler: impl Submit_handler<bool>,
@@ -504,7 +503,7 @@ pub fn configurator<T: Tree>(
         tree,
         configurator_state,
         config_manager: config_manager.clone(),
-        submit: Popup::new(config_manager).into_shared(),
+        submit: Popup::new(config_manager).await?.into_shared(),
         submitting: false,
         popup_slot: Component_slot::new(),
     })
