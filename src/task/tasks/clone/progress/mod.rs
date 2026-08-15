@@ -17,6 +17,9 @@ use vizual::{
 };
 use vizual_macros::display;
 
+#[cfg(test)]
+mod tests;
+
 const MAX_ROWS: usize = 3;
 const MAX_NAME_CHARACTERS: usize = 64;
 const MINIMUM_BAR_WIDTH: f64 = 360.0;
@@ -225,35 +228,5 @@ impl Widget_trait for Progress_bar {
             radius.min(fill.size.width / 2.0),
         );
         Ok(None)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn snapshots_bounded_gix_progress() {
-        let tree = gix::progress::tree::Root::new();
-        let item = tree.add_child("receiving objects");
-        item.init(Some(20), gix::progress::count("objects"));
-        item.set(5);
-
-        let Clone_progress::Running(rows) = Clone_progress::from_tree(&tree) else {
-            panic!("a live gix task should produce running progress");
-        };
-        assert_eq!(rows.len(), 1);
-        assert_eq!(rows[0].name, "receiving objects");
-        assert_eq!(rows[0].fraction, Some(0.25));
-    }
-
-    #[test]
-    fn remote_progress_names_are_kept_to_one_bounded_line() {
-        let name = format!("{}\nignored", "x".repeat(MAX_NAME_CHARACTERS + 10));
-        let name = single_line(&name);
-
-        assert_eq!(name.chars().count(), MAX_NAME_CHARACTERS + 1);
-        assert!(name.ends_with('…'));
-        assert!(!name.contains('\n'));
     }
 }

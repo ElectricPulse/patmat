@@ -10,6 +10,9 @@ use std::{
     time::Duration,
 };
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Clone)]
 pub(super) struct Task {
     pub(super) path: PathBuf,
@@ -111,26 +114,4 @@ fn clone_repository(
         .wrap_err_with(|| format!("Failed to check out {}", path.display()))?;
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn clones_and_checks_out_a_local_repository() -> Result<()> {
-        let temporary = tempfile::tempdir()?;
-        let destination = temporary.path().join("clone");
-        let progress = gix::progress::tree::Root::new();
-
-        clone_repository(
-            env!("CARGO_MANIFEST_DIR").to_string(),
-            destination.clone(),
-            progress,
-        )?;
-
-        assert!(destination.join(".git").is_dir());
-        assert!(destination.join("Cargo.toml").is_file());
-        Ok(())
-    }
 }
