@@ -89,7 +89,6 @@ impl<Output: Output_constraints> Task_manager<Output> {
 pub trait Target_trait: DynClone + Send + Sync {
     fn get_metadata(&self) -> Target_metadata;
     async fn ensure_ran(&self) -> Result<()>;
-    fn widget(&self) -> Option<Widget>;
 }
 
 dyn_clone::clone_trait_object!(Target_trait);
@@ -121,11 +120,6 @@ pub type Dependencies = Vec<Dependency>;
 pub struct Target<Output: Output_constraints> {
     metadata: Target_metadata,
     task: Arc<Mutex<Task_manager<Output>>>,
-    // The widget is intentionally separate from the task. The task manager stays locked for the
-    // entire build, so a widget stored as the task itself could not be rendered while that build
-    // was running. Keeping presentation separate also lets the same task implementation be used
-    // by different targets with different UIs.
-    widget: Option<Widget>,
 }
 
 impl<Output: Output_constraints> Target<Output> {
@@ -152,7 +146,6 @@ impl<Output: Output_constraints> Target<Output> {
         };
 
         Self {
-            widget: None,
             metadata: metadata.clone(),
             task: Arc::new(Mutex::new(Task_manager {
                 output: None,
@@ -160,10 +153,6 @@ impl<Output: Output_constraints> Target<Output> {
                 metadata,
             })),
         }
-    }
-
-    pub fn set_widget(&mut self, widget: impl Widget_trait) {
-        self.widget = Some(Box::new(widget));
     }
 
     pub async fn get(&self) -> Result<Output> {

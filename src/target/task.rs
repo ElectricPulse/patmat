@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 
 use color_eyre::eyre::Result;
+use vizual::widget::Widget;
 
 #[derive(Clone)]
 pub enum Status {
