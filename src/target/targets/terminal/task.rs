@@ -47,6 +47,10 @@ impl Task {
             working_dir: Some(working_dir.into()),
         }
     }
+
+    pub fn widget(&self) -> Terminal {
+        self.terminal.clone()
+    }
 }
 
 #[async_trait]

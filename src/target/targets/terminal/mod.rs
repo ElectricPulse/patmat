@@ -53,6 +53,9 @@ pub fn new_in_dir_with_terminal(
 }
 
 fn build(name: impl Into<String>, task: task::Task, dependencies: Dependencies) -> Target<()> {
+    let widget = task.widget();
     let working_dir = task.working_dir.clone();
-    Target::new(name, working_dir, task, dependencies)
+    let mut target = Target::new(name, working_dir, task, dependencies);
+    target.set_widget(widget);
+    target
 }
