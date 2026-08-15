@@ -1,7 +1,8 @@
-pub(super) mod task;
+pub mod task;
 
 use crate::target::{Dependencies, Target};
 use std::path::PathBuf;
+use vizual::widget::widgets::terminal::Terminal;
 
 pub fn new(
     name: impl Into<String>,
@@ -20,6 +21,33 @@ pub fn new_in_dir(
     build(
         name,
         task::Task::new_in_dir(command, working_dir),
+        dependencies,
+    )
+}
+
+pub fn new_with_terminal(
+    name: impl Into<String>,
+    terminal: Terminal,
+    command: impl Into<String>,
+    dependencies: Dependencies,
+) -> Target<()> {
+    build(
+        name,
+        task::Task::with_terminal(terminal, command),
+        dependencies,
+    )
+}
+
+pub fn new_in_dir_with_terminal(
+    name: impl Into<String>,
+    terminal: Terminal,
+    command: impl Into<String>,
+    working_dir: impl Into<PathBuf>,
+    dependencies: Dependencies,
+) -> Target<()> {
+    build(
+        name,
+        task::Task::with_terminal_in_dir(terminal, command, working_dir),
         dependencies,
     )
 }

@@ -1,12 +1,12 @@
 use crate::target::task;
+use vizual::widget::widgets::terminal::Terminal;
 
 use async_trait::async_trait;
-use color_eyre::eyre::{WrapErr, bail};
 use std::path::PathBuf;
-use tokio::process::Command;
 
 #[derive(Clone)]
-pub(crate) struct Task {
+pub struct Task {
+    pub(super) terminal: Terminal,
     pub(super) command: String,
     pub(super) working_dir: Option<PathBuf>,
 }
@@ -14,12 +14,35 @@ pub(crate) struct Task {
 impl Task {
     pub fn new(command: impl Into<String>) -> Self {
         Self {
+            terminal: Terminal::new(),
             command: command.into(),
             working_dir: None,
         }
     }
+
     pub fn new_in_dir(command: impl Into<String>, working_dir: impl Into<PathBuf>) -> Self {
         Self {
+            terminal: Terminal::new(),
+            command: command.into(),
+            working_dir: Some(working_dir.into()),
+        }
+    }
+
+    pub fn with_terminal(terminal: Terminal, command: impl Into<String>) -> Self {
+        Self {
+            terminal,
+            command: command.into(),
+            working_dir: None,
+        }
+    }
+
+    pub fn with_terminal_in_dir(
+        terminal: Terminal,
+        command: impl Into<String>,
+        working_dir: impl Into<PathBuf>,
+    ) -> Self {
+        Self {
+            terminal,
             command: command.into(),
             working_dir: Some(working_dir.into()),
         }
@@ -31,20 +54,12 @@ impl task::Task_trait for Task {
     type Output = ();
 
     async fn run(&self) -> task::Task_result {
-        let mut command = Command::new("/bin/bash");
-        let _ = command.arg("-c").arg(&self.command);
-        if let Some(working_dir) = &self.working_dir {
-            let _ = command.current_dir(working_dir);
-        }
+        let handle = match &self.working_dir {
+            Some(working_dir) => self.terminal.run_in_dir(&self.command, working_dir),
+            None => self.terminal.run(&self.command),
+        }?;
 
-        let status = command
-            .status()
-            .await
-            .wrap_err_with(|| format!("Failed to run {}", self.command))?;
-        if !status.success() {
-            bail!("Command exited with {status}");
-        }
-
+        handle.wait().await?;
         Ok(((), task::Status::Built))
     }
 }
