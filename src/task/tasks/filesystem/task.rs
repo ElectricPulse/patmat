@@ -1,4 +1,4 @@
-use crate::target::task;
+use crate::task;
 
 use async_trait::async_trait;
 use color_eyre::eyre::WrapErr;

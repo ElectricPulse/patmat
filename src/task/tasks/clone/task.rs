@@ -1,5 +1,5 @@
 use super::progress::{Clone_progress, Clone_progress_state, Clone_progress_widget};
-use crate::target::task;
+use crate::task;
 
 use arc_swap::ArcSwap;
 use async_trait::async_trait;

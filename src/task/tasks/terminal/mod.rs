@@ -1,61 +1,30 @@
 pub mod task;
 
-use crate::target::{Dependencies, Target};
 use std::path::PathBuf;
+use crate::task::Task;
 use vizual::widget::widgets::terminal::Terminal;
 
-pub fn new(
-    name: impl Into<String>,
-    command: impl Into<String>,
-    dependencies: Dependencies,
-) -> Target<()> {
-    build(name, task::Task::new(command), dependencies)
+pub fn new(command: impl Into<String>) -> Task<()> {
+    build(task::Task::new(command))
 }
 
-pub fn new_in_dir(
-    name: impl Into<String>,
-    command: impl Into<String>,
-    working_dir: impl Into<PathBuf>,
-    dependencies: Dependencies,
-) -> Target<()> {
-    build(
-        name,
-        task::Task::new_in_dir(command, working_dir),
-        dependencies,
-    )
+pub fn new_in_dir(command: impl Into<String>, working_dir: impl Into<PathBuf>) -> Task<()> {
+    build(task::Task::new_in_dir(command, working_dir))
 }
 
-pub fn new_with_terminal(
-    name: impl Into<String>,
-    terminal: Terminal,
-    command: impl Into<String>,
-    dependencies: Dependencies,
-) -> Target<()> {
-    build(
-        name,
-        task::Task::with_terminal(terminal, command),
-        dependencies,
-    )
+pub fn with_terminal(terminal: Terminal, command: impl Into<String>) -> Task<()> {
+    build(task::Task::with_terminal(terminal, command))
 }
 
-pub fn new_in_dir_with_terminal(
-    name: impl Into<String>,
+pub fn with_terminal_in_dir(
     terminal: Terminal,
     command: impl Into<String>,
     working_dir: impl Into<PathBuf>,
-    dependencies: Dependencies,
-) -> Target<()> {
-    build(
-        name,
-        task::Task::with_terminal_in_dir(terminal, command, working_dir),
-        dependencies,
-    )
+) -> Task<()> {
+    build(task::Task::with_terminal_in_dir(terminal, command, working_dir))
 }
 
-fn build(name: impl Into<String>, task: task::Task, dependencies: Dependencies) -> Target<()> {
+fn build(task: task::Task) -> Task<()> {
     let widget = task.widget();
-    let working_dir = task.working_dir.clone();
-    let mut target = Target::new(name, working_dir, task, dependencies);
-    target.set_widget(widget);
-    target
+    Task::new(task, Some(Box::new(widget)))
 }

@@ -1,19 +1,11 @@
 mod progress;
 mod task;
 
-use crate::target::{Dependencies, Target};
+use crate::task::Task;
 use std::path::PathBuf;
 
-pub fn new(
-    name: impl Into<String>,
-    path: PathBuf,
-    remote_path: String,
-    dependencies: Dependencies,
-) -> Target<()> {
+pub fn new(path: PathBuf, remote_path: String) -> Task<()> {
     let task = task::Task::new(path, remote_path);
     let widget = task.widget();
-    let path = task.path.clone();
-    let mut target = Target::new(name, Some(path), task, dependencies);
-    target.set_widget(widget);
-    target
+    Task::new(task, Some(Box::new(widget)))
 }

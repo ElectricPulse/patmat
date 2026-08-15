@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use vizual_macros::display;
 
 use crate::{
-    target::{Dependencies, Dependency},
+    target::{Dependencies, Dependency, status::Target_status},
     ui::target_tree::Target_tree,
     utils::display_target_path,
 };
@@ -95,20 +95,27 @@ impl Widget_trait for Builder {
                 || "None".to_owned(),
                 |path| display_target_path(path, &self.working_directory),
             );
-        let status = metadata.status.affect(render.clone()).await?.label();
+        let status = metadata.status.affect(render.clone()).await?.clone();
+        let status_label = status.label();
 
         let theme = theme.affect(render).await?;
         let mut name = Paragraph::new(Direction::Horizontal, theme.units.em * 15.0);
         name.set_styled_content(name_content, theme.specific.text.title);
 
-        let metadata = Axis::new(
-            Direction::Vertical,
-            vec![
-                Box::new(Anchor::left(name)),
-                Box::new(Anchor::left(Text::new(format!("Path: {path}")))),
-                Box::new(Anchor::left(Text::new(format!("Status: {status}")))),
-            ],
-        );
+        let mut metadata_items: Vec<Widget> = vec![
+            Box::new(Anchor::left(name)),
+            Box::new(Anchor::left(Text::new(format!("Path: {path}")))),
+            Box::new(Anchor::left(Text::new(format!("Status: {status_label}")))),
+        ];
+
+        if let Target_status::Error(error) = &status {
+            let mut error_paragraph = Paragraph::new(Direction::Horizontal, theme.units.em * 25.0);
+            error_paragraph.set_content(format!("{error:#}"));
+            metadata_items.push(Box::new(Anchor::left(Text::new("Error message:"))));
+            metadata_items.push(Box::new(Anchor::left(error_paragraph)));
+        }
+
+        let metadata = Axis::new(Direction::Vertical, metadata_items);
         let mut panel: Vec<Widget> = vec![Box::new(metadata)];
         if let Some(widget) = dependency.widget() {
             panel.push(Box::new(Linebreak::new(Direction::Horizontal)));

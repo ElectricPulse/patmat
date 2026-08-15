@@ -146,6 +146,7 @@ impl Widget_trait for Clone_progress_widget {
                 }
             }
             Clone_progress::Complete => {
+                children.push(Box::new(Progress_bar::new(1.0)));
                 children.push(Box::new(Anchor::left(Text::new("Clone complete"))));
             }
             Clone_progress::Failed(error) => {

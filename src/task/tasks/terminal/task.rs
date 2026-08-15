@@ -1,4 +1,4 @@
-use crate::target::task;
+use crate::task;
 use vizual::widget::widgets::terminal::Terminal;
 
 use async_trait::async_trait;

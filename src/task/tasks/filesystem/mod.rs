@@ -1,84 +1,36 @@
 mod task;
 
-use crate::target::{Dependencies, Target};
+use crate::task::Task;
 use std::path::PathBuf;
 
-pub fn copy_file(
-    name: impl Into<String>,
-    source: PathBuf,
-    destination: PathBuf,
-    dependencies: Dependencies,
-) -> Target<()> {
-    let path = destination
-        .parent()
-        .map_or_else(PathBuf::new, PathBuf::from);
-    Target::new(
-        name,
-        Some(path),
+pub fn copy_file(source: PathBuf, destination: PathBuf) -> Task<()> {
+    Task::new(
         task::Copy_file_task {
             source,
             destination,
         },
-        dependencies,
+        None,
     )
 }
 
-pub fn copy_dir(
-    name: impl Into<String>,
-    source: PathBuf,
-    destination: PathBuf,
-    dependencies: Dependencies,
-) -> Target<()> {
-    let path = destination.clone();
-    Target::new(
-        name,
-        Some(path),
+pub fn copy_dir(source: PathBuf, destination: PathBuf) -> Task<()> {
+    Task::new(
         task::Copy_dir_task {
             source,
             destination,
         },
-        dependencies,
+        None,
     )
 }
 
-pub fn create_dir(
-    name: impl Into<String>,
-    path: PathBuf,
-    dependencies: Dependencies,
-) -> Target<()> {
-    Target::new(
-        name,
-        Some(path.clone()),
-        task::Create_dir_task { path },
-        dependencies,
-    )
+pub fn create_dir(path: PathBuf) -> Task<()> {
+    Task::new(task::Create_dir_task { path }, None)
 }
 
-pub fn write_file(
-    name: impl Into<String>,
-    path: PathBuf,
-    content: String,
-    dependencies: Dependencies,
-) -> Target<()> {
-    let working_path = path.parent().map_or_else(PathBuf::new, PathBuf::from);
-    Target::new(
-        name,
-        Some(working_path),
-        task::Write_file_task { path, content },
-        dependencies,
-    )
+pub fn write_file(path: PathBuf, content: String) -> Task<()> {
+    Task::new(task::Write_file_task { path, content }, None)
 }
 
-pub fn create_directory(
-    name: impl Into<String>,
-    path: PathBuf,
-    subdirs: Vec<String>,
-    dependencies: Dependencies,
-) -> Target<PathBuf> {
-    Target::new(
-        name,
-        Some(path.clone()),
-        task::Create_directory_task { path, subdirs },
-        dependencies,
-    )
+pub fn create_directory(path: PathBuf, subdirs: Vec<String>) -> Task<PathBuf> {
+    Task::new(task::Create_directory_task { path, subdirs }, None)
 }

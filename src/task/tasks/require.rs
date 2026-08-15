@@ -1,21 +1,18 @@
-use crate::target::{
-    Dependencies, Target,
-    task::{self, Status},
-};
+use crate::task::{self, Status, Task};
 
 use async_trait::async_trait;
 
 #[derive(Clone, Copy)]
-struct Task {}
+struct Require_task {}
 
 #[async_trait]
-impl task::Task_trait for Task {
+impl task::Task_trait for Require_task {
     type Output = ();
     async fn run(&self) -> task::Task_result {
-        return Ok(((), Status::Built));
+        Ok(((), Status::Built))
     }
 }
 
-pub fn new(name: impl Into<String>, dependencies: Dependencies) -> Target<()> {
-    Target::new(name, None, Task {}, dependencies)
+pub fn new() -> Task<()> {
+    Task::new(Require_task {}, None)
 }
