@@ -131,7 +131,10 @@ impl Widget_trait for Target_tree {
             .await?
             .into_iter()
             .map(|target| -> Menu_item<Dependency> {
-                Box::new(Target_tree_item::new(target, self.working_directory.clone()))
+                Box::new(Target_tree_item::new(
+                    target,
+                    self.working_directory.clone(),
+                ))
             })
             .collect::<Vec<_>>();
 
