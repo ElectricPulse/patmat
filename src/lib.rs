@@ -20,7 +20,7 @@ use vizual::{
     slot::manager::Slots,
     state::{State, Store},
     widget::{
-        Focus_provider, Shared_widget, Widget, Widget_trait,
+        Focus_provider, Layout_input, Shared_widget, Widget, Widget_trait,
         widgets::{
             layout::axis::Axis,
             linebreak::Linebreak,
@@ -72,15 +72,12 @@ pub fn new(dependencies: Dependencies, working_directory: PathBuf) -> Builder {
 impl Widget_trait for Builder {
     async fn layout(
         &mut self,
-        render: vizual::Render,
-        theme: vizual::state::Store<vizual::theme::Theme>,
-        _focus: &mut Focus_provider,
-        _hitbox: &mut Hitbox,
-        _parent: Hitbox,
-        _problem: Component_context,
-        _text_context: &mut vizual::graphics::text::Text_context,
-        slots: &mut Slots,
-        _root: &vizual::component::Shared_component,
+        Layout_input {
+            render,
+            theme,
+            slots,
+            ..
+        }: Layout_input<'_>,
     ) -> Result<Children> {
         let mut children: Vec<Widget> = vec![Box::new(self.target_tree.clone())];
 

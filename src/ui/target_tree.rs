@@ -10,7 +10,7 @@ use vizual::{
     slot::manager::Slots,
     state::{State, Store},
     widget::{
-        Focus_provider, Widget, Widget_trait,
+        Focus_provider, Layout_input, Widget, Widget_trait,
         custom_widget::Custom_widget_trait,
         widgets::{
             icon::Icon,
@@ -45,15 +45,11 @@ impl Custom_widget_trait for Target_tree_item {
 
     async fn layout(
         &mut self,
-        render: vizual::Render,
-        _theme: Store<vizual::theme::Theme>,
-        _focus: &mut Focus_provider,
-        _hitbox: &mut Hitbox,
-        _parent: Hitbox,
-        _problem: Component_context,
-        _text_context: &mut vizual::graphics::text::Text_context,
-        slots: &mut Slots,
-        _root: &vizual::component::Shared_component,
+        Layout_input {
+            render,
+            slots,
+            ..
+        }: Layout_input<'_>,
         _selected: bool,
     ) -> Result<Children> {
         let metadata = self.target.get_metadata();
@@ -119,15 +115,11 @@ impl Target_tree {
 impl Widget_trait for Target_tree {
     async fn layout(
         &mut self,
-        render: vizual::Render,
-        _theme: Store<vizual::theme::Theme>,
-        _focus: &mut Focus_provider,
-        _hitbox: &mut Hitbox,
-        _parent: Hitbox,
-        _problem: Component_context,
-        _text_context: &mut vizual::graphics::text::Text_context,
-        slots: &mut Slots,
-        _root: &vizual::component::Shared_component,
+        Layout_input {
+            render,
+            slots,
+            ..
+        }: Layout_input<'_>,
     ) -> Result<Children> {
         let targets = get_targets(&self.dependencies, render.clone())
             .await?

@@ -12,7 +12,7 @@ use vizual::{
     sync::Thread_safe,
     theme::Theme,
     widget::{
-        Focus_provider, Shared_widget, Widget, Widget_trait,
+        Focus_provider, Layout_input, Shared_widget, Widget, Widget_trait,
         custom_widget::Custom_widget_trait,
         widgets::{
             layout::axis::Axis,
@@ -45,15 +45,12 @@ impl<Value: Thread_safe> Custom_widget_trait for Default_leaf_value<Value> {
 
     async fn layout(
         &mut self,
-        render: vizual::Render,
-        theme: Store<Theme>,
-        _focus: &mut Focus_provider,
-        _hitbox: &mut Hitbox,
-        _parent: Hitbox,
-        _problem: Component_context,
-        _text_context: &mut vizual::graphics::text::Text_context,
-        slots: &mut Slots,
-        _root: &vizual::component::Shared_component,
+        Layout_input {
+            render,
+            theme,
+            slots,
+            ..
+        }: Layout_input<'_>,
         selected: bool,
     ) -> Result<Children> {
         let theme = theme.affect(render).await?;
@@ -92,15 +89,12 @@ impl<Value: Thread_safe> Custom_widget_trait for Custom_leaf_value<Value> {
 
     async fn layout(
         &mut self,
-        render: vizual::Render,
-        theme: Store<Theme>,
-        _focus: &mut Focus_provider,
-        _hitbox: &mut Hitbox,
-        _parent: Hitbox,
-        _problem: Component_context,
-        _text_context: &mut vizual::graphics::text::Text_context,
-        slots: &mut Slots,
-        _root: &vizual::component::Shared_component,
+        Layout_input {
+            render,
+            theme,
+            slots,
+            ..
+        }: Layout_input<'_>,
         selected: bool,
     ) -> Result<Children> {
         let theme = theme.affect(render).await?;
@@ -172,15 +166,7 @@ impl<Value: Clone + Thread_safe> Optional_setting<Value> {
 impl<Value: Clone + Thread_safe> Widget_trait for Optional_setting<Value> {
     async fn layout(
         &mut self,
-        _render: vizual::Render,
-        _theme: Store<Theme>,
-        _focus: &mut Focus_provider,
-        _hitbox: &mut Hitbox,
-        _parent: Hitbox,
-        _problem: Component_context,
-        _text_context: &mut vizual::graphics::text::Text_context,
-        slots: &mut Slots,
-        _root: &vizual::component::Shared_component,
+        Layout_input { slots, .. }: Layout_input<'_>,
     ) -> Result<Children> {
         let menu = self.get_menu().await?;
         Ok(vec![display!(menu)])

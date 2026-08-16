@@ -11,7 +11,7 @@ use vizual::{
     state::{State, Store},
     theme::Theme,
     widget::{
-        Focus_provider, Widget, Widget_trait,
+        Focus_provider, Layout_input, Render_input, Widget, Widget_trait,
         widgets::{layout::axis::Axis, paper::Paper, positioning::anchor::Anchor, text::Text},
     },
 };
@@ -98,7 +98,7 @@ fn single_line(value: &str) -> String {
 }
 
 #[derive(Clone)]
-pub(super) struct Clone_progress_widget {
+pub(crate) struct Clone_progress_widget {
     progress: Clone_progress_state,
 }
 
@@ -112,15 +112,12 @@ impl Clone_progress_widget {
 impl Widget_trait for Clone_progress_widget {
     async fn layout(
         &mut self,
-        render: vizual::Render,
-        theme: Store<Theme>,
-        _focus: &mut Focus_provider,
-        _hitbox: &mut Hitbox,
-        _parent: Hitbox,
-        _problem: Component_context,
-        _text_context: &mut Text_context,
-        slots: &mut Slots,
-        _root: &vizual::component::Shared_component,
+        Layout_input {
+            render,
+            theme,
+            slots,
+            ..
+        }: Layout_input<'_>,
     ) -> Result<Children> {
         let progress = self.progress.load();
         let mut title = Text::new("Cloning repository");
@@ -183,15 +180,11 @@ impl Progress_bar {
 impl Widget_trait for Progress_bar {
     async fn layout(
         &mut self,
-        _render: vizual::Render,
-        _theme: Store<Theme>,
-        _focus: &mut Focus_provider,
-        hitbox: &mut Hitbox,
-        _parent: Hitbox,
-        problem: Component_context,
-        _text_context: &mut Text_context,
-        _slots: &mut Slots,
-        _root: &vizual::component::Shared_component,
+        Layout_input {
+            hitbox,
+            problem,
+            ..
+        }: Layout_input<'_>,
     ) -> Result<Children> {
         problem
             .constrain(vizual::constraint!(
@@ -206,13 +199,13 @@ impl Widget_trait for Progress_bar {
 
     async fn render(
         &mut self,
-        render: vizual::Render,
-        theme: Store<Theme>,
-        _focus: &mut Focus_provider,
-        hitbox: Rect,
-        scene: &mut Scene<'_>,
-        _text_context: &mut Text_context,
-        _context: &Render_context<'_>,
+        Render_input {
+            render,
+            theme,
+            hitbox,
+            scene,
+            ..
+        }: Render_input<'_, '_>,
     ) -> Result<()> {
         let theme = theme.affect(render).await?;
         let radius = hitbox.size.height / 2.0;

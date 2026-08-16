@@ -30,7 +30,7 @@ use vizual::{
     sync::{Mutex, Thread_safe},
     theme::Theme,
     widget::{
-        Focus_provider, Shared_widget, Widget, Widget_trait,
+        Focus_provider, Layout_input, Render_input, Shared_widget, Widget, Widget_trait,
         widgets::{
             button::Button,
             layout::{axis::Axis, grid::Grid},
@@ -64,46 +64,12 @@ dyn_clone::clone_trait_object!(<Value> Field<Value>);
 
 #[async_trait]
 impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
-    async fn layout(
-        &mut self,
-        render: vizual::Render,
-        theme: Store<Theme>,
-        focus: &mut Focus_provider,
-        hitbox: &mut Hitbox,
-        parent: Hitbox,
-        problem: Component_context,
-        text_context: &mut vizual::graphics::text::Text_context,
-        slots: &mut Slots,
-        root: &vizual::component::Shared_component,
-    ) -> Result<Children> {
-        (**self)
-            .layout(
-                render,
-                theme,
-                focus,
-                hitbox,
-                parent,
-                problem,
-                text_context,
-                slots,
-                root,
-            )
-            .await
+    async fn layout(&mut self, input: Layout_input<'_>) -> Result<Children> {
+        (**self).layout(input).await
     }
 
-    async fn render(
-        &mut self,
-        render: vizual::Render,
-        theme: Store<Theme>,
-        focus: &mut Focus_provider,
-        hitbox: Rect,
-        scene: &mut Scene<'_>,
-        text_context: &mut vizual::graphics::text::Text_context,
-        context: &vizual::component::Render_context<'_>,
-    ) -> Result<()> {
-        (**self)
-            .render(render, theme, focus, hitbox, scene, text_context, context)
-            .await
+    async fn render(&mut self, input: Render_input<'_, '_>) -> Result<()> {
+        (**self).render(input).await
     }
 
     async fn on_all_events(&mut self, event: &Event) -> Result<Vizual_msg> {
@@ -322,15 +288,14 @@ impl<T: Tree> Tree_view<T> {
 impl<T: Tree> Widget_trait for Tree_view<T> {
     async fn layout(
         &mut self,
-        render: vizual::Render,
-        theme: Store<Theme>,
-        focus: &mut Focus_provider,
-        _hitbox: &mut Hitbox,
-        _parent: Hitbox,
-        problem: Component_context,
-        _text_context: &mut vizual::graphics::text::Text_context,
-        slots: &mut Slots,
-        _root: &vizual::component::Shared_component,
+        Layout_input {
+            render,
+            theme,
+            focus,
+            problem,
+            slots,
+            ..
+        }: Layout_input<'_>,
     ) -> Result<Children> {
         focus.set_active(true);
         let cursor = self.configurator_state.lock().await?.cursor.clone();
@@ -352,13 +317,7 @@ impl<T: Tree> Widget_trait for Tree_view<T> {
 
     async fn render(
         &mut self,
-        _render: vizual::Render,
-        _theme: Store<Theme>,
-        focus: &mut Focus_provider,
-        _hitbox: Rect,
-        _scene: &mut Scene<'_>,
-        _text_context: &mut vizual::graphics::text::Text_context,
-        _context: &vizual::component::Render_context<'_>,
+        Render_input { focus, .. }: Render_input<'_, '_>,
     ) -> Result<()> {
         focus.set_active(true);
         Ok(())
@@ -516,15 +475,15 @@ pub async fn configurator<T: Tree>(
 impl<T: Tree> Widget_trait for Configurator<T> {
     async fn layout(
         &mut self,
-        render: vizual::Render,
-        theme: Store<Theme>,
-        _focus: &mut Focus_provider,
-        hitbox: &mut Hitbox,
-        _parent: Hitbox,
-        problem: Component_context,
-        _text_context: &mut vizual::graphics::text::Text_context,
-        slots: &mut Slots,
-        _root: &vizual::component::Shared_component,
+        Layout_input {
+            render,
+            theme,
+            hitbox,
+            problem,
+            slots,
+            root,
+            ..
+        }: Layout_input<'_>,
     ) -> Result<Children> {
         let tree_view = Tree_view {
             tree: self.tree.clone(),
@@ -602,7 +561,7 @@ impl<T: Tree> Widget_trait for Configurator<T> {
                 .await?;
 
             popup.lock().await?.logical = true;
-            _root.lock().await?.children.push(popup.clone());
+            root.lock().await?.children.push(popup.clone());
             return Ok(vec![display!(grid), popup]);
         }
 
