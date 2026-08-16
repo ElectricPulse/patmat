@@ -126,6 +126,7 @@ impl Widget_trait for Target_tree {
         _problem: Component_context,
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
+        _logical: &mut bool,
     ) -> Result<Children> {
         let targets = get_targets(&self.dependencies, render.clone())
             .await?
