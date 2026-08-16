@@ -80,7 +80,7 @@ impl Widget_trait for Builder {
         _problem: Component_context,
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
-        _logical: &mut bool,
+        _root: &vizual::component::Shared_component,
     ) -> Result<Children> {
         let mut children: Vec<Widget> = vec![Box::new(self.target_tree.clone())];
 

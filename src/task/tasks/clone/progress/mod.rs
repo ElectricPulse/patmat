@@ -120,7 +120,7 @@ impl Widget_trait for Clone_progress_widget {
         _problem: Component_context,
         _text_context: &mut Text_context,
         slots: &mut Slots,
-        _logical: &mut bool,
+        _root: &vizual::component::Shared_component,
     ) -> Result<Children> {
         let progress = self.progress.load();
         let mut title = Text::new("Cloning repository");
@@ -191,7 +191,7 @@ impl Widget_trait for Progress_bar {
         problem: Component_context,
         _text_context: &mut Text_context,
         _slots: &mut Slots,
-        _logical: &mut bool,
+        _root: &vizual::component::Shared_component,
     ) -> Result<Children> {
         problem
             .constrain(vizual::constraint!(

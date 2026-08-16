@@ -74,7 +74,7 @@ impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
         problem: Component_context,
         text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
-        logical: &mut bool,
+        root: &vizual::component::Shared_component,
     ) -> Result<Children> {
         (**self)
             .layout(
@@ -86,7 +86,7 @@ impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
                 problem,
                 text_context,
                 slots,
-                logical,
+                root,
             )
             .await
     }
@@ -330,7 +330,7 @@ impl<T: Tree> Widget_trait for Tree_view<T> {
         problem: Component_context,
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
-        _logical: &mut bool,
+        _root: &vizual::component::Shared_component,
     ) -> Result<Children> {
         focus.set_active(true);
         let cursor = self.configurator_state.lock().await?.cursor.clone();
@@ -524,7 +524,7 @@ impl<T: Tree> Widget_trait for Configurator<T> {
         problem: Component_context,
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
-        _logical: &mut bool,
+        _root: &vizual::component::Shared_component,
     ) -> Result<Children> {
         let tree_view = Tree_view {
             tree: self.tree.clone(),
@@ -601,8 +601,8 @@ impl<T: Tree> Widget_trait for Configurator<T> {
                 .set_child(self.submit.clone(), problem.clone(), hitbox)
                 .await?;
 
-            let mut popup = popup;
-            popup.layer = 1;
+            popup.lock().await?.logical = true;
+            _root.lock().await?.children.push(popup.clone());
             return Ok(vec![display!(grid), popup]);
         }
 
