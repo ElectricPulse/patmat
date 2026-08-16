@@ -213,7 +213,7 @@ impl Widget_trait for Progress_bar {
         scene: &mut Scene<'_>,
         _text_context: &mut Text_context,
         _context: &Render_context<'_>,
-    ) -> Result<Option<Hitbox>> {
+    ) -> Result<()> {
         let theme = theme.affect(render).await?;
         let radius = hitbox.size.height / 2.0;
         scene.fill_rounded_rect(hitbox, theme.semantic.border, radius);
@@ -229,6 +229,6 @@ impl Widget_trait for Progress_bar {
             theme.semantic.focus,
             radius.min(fill.size.width / 2.0),
         );
-        Ok(None)
+        Ok(())
     }
 }

@@ -74,6 +74,7 @@ impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
         problem: Component_context,
         text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
+        logical: &mut bool,
     ) -> Result<Children> {
         (**self)
             .layout(
@@ -85,6 +86,7 @@ impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
                 problem,
                 text_context,
                 slots,
+                logical,
             )
             .await
     }
@@ -98,7 +100,7 @@ impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
         scene: &mut Scene<'_>,
         text_context: &mut vizual::graphics::text::Text_context,
         context: &vizual::component::Render_context<'_>,
-    ) -> Result<Option<Hitbox>> {
+    ) -> Result<()> {
         (**self)
             .render(render, theme, focus, hitbox, scene, text_context, context)
             .await
@@ -328,6 +330,7 @@ impl<T: Tree> Widget_trait for Tree_view<T> {
         problem: Component_context,
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
+        _logical: &mut bool,
     ) -> Result<Children> {
         focus.set_active(true);
         let cursor = self.configurator_state.lock().await?.cursor.clone();
@@ -356,9 +359,9 @@ impl<T: Tree> Widget_trait for Tree_view<T> {
         _scene: &mut Scene<'_>,
         _text_context: &mut vizual::graphics::text::Text_context,
         _context: &vizual::component::Render_context<'_>,
-    ) -> Result<Option<Hitbox>> {
+    ) -> Result<()> {
         focus.set_active(true);
-        Ok(None)
+        Ok(())
     }
 
     async fn on_key_press(&mut self, key: &Key_event) -> Result<Vizual_msg> {
@@ -521,6 +524,7 @@ impl<T: Tree> Widget_trait for Configurator<T> {
         problem: Component_context,
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
+        _logical: &mut bool,
     ) -> Result<Children> {
         let tree_view = Tree_view {
             tree: self.tree.clone(),

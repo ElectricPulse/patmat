@@ -53,6 +53,7 @@ impl<Value: Thread_safe> Custom_widget_trait for Default_leaf_value<Value> {
         _problem: Component_context,
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
+        _logical: &mut bool,
         selected: bool,
     ) -> Result<Children> {
         let theme = theme.affect(render).await?;
@@ -99,6 +100,7 @@ impl<Value: Thread_safe> Custom_widget_trait for Custom_leaf_value<Value> {
         _problem: Component_context,
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
+        _logical: &mut bool,
         selected: bool,
     ) -> Result<Children> {
         let theme = theme.affect(render).await?;
@@ -178,6 +180,7 @@ impl<Value: Clone + Thread_safe> Widget_trait for Optional_setting<Value> {
         _problem: Component_context,
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
+        _logical: &mut bool,
     ) -> Result<Children> {
         let menu = self.get_menu().await?;
         Ok(vec![display!(menu)])

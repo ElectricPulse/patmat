@@ -53,6 +53,7 @@ impl Custom_widget_trait for Target_tree_item {
         _problem: Component_context,
         _text_context: &mut vizual::graphics::text::Text_context,
         slots: &mut Slots,
+        _logical: &mut bool,
         _selected: bool,
     ) -> Result<Children> {
         let metadata = self.target.get_metadata();
