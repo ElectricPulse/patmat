@@ -2056,15 +2056,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "good_lp"
-version = "1.15.2"
-source = "git+https://github.com/rust-or/good_lp?rev=e4a73e22ee0003c3c1f34c717b528ee8d18ab35d#e4a73e22ee0003c3c1f34c717b528ee8d18ab35d"
-dependencies = [
- "fnv",
- "highs",
-]
-
-[[package]]
 name = "gpu-allocator"
 version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4904,7 +4895,6 @@ dependencies = [
  "derive-where",
  "dyn-clone",
  "futures",
- "good_lp",
  "highs",
  "highs-sys",
  "log",
