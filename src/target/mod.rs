@@ -25,12 +25,12 @@ static NEXT_TARGET_ID: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone)]
 pub struct Target_metadata {
-    pub(crate) id: Store<u64>,
-    pub(crate) name: Store<String>,
+    pub id: Store<u64>,
+    pub name: Store<String>,
     /// This path is only used to show the user roughly where the task is working.
-    pub(crate) path: Store<Option<PathBuf>>,
-    pub(crate) dependencies: Store<Dependencies>,
-    pub(crate) status: Store<Target_status>,
+    pub path: Store<Option<PathBuf>>,
+    pub dependencies: Store<Dependencies>,
+    pub status: Store<Target_status>,
 }
 
 #[async_trait]
@@ -54,6 +54,10 @@ pub struct Target<Output: Output_constraints> {
 }
 
 impl<Output: Output_constraints> Target<Output> {
+    pub fn get_metadata(&self) -> Target_metadata {
+        self.metadata.clone()
+    }
+
     pub fn new_independent(
         name: impl Into<String>,
         path: Option<PathBuf>,
