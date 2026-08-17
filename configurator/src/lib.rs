@@ -6,35 +6,34 @@
 
 pub mod widgets;
 
-use async_recursion::async_recursion;
-use async_trait::async_trait;
-use color_eyre::eyre::{Result, WrapErr, eyre};
-use derive_where::derive_where;
-use indexmap::IndexMap;
-use serde::Serialize;
 use std::{
     fs,
     path::{Path, PathBuf},
     sync::Arc,
 };
+
+use async_trait::async_trait;
+use color_eyre::eyre::{Result, WrapErr, eyre};
+use derive_where::derive_where;
+use indexmap::IndexMap;
+use serde::Serialize;
 use vizual::{
     Vizual_command, Vizual_msg, check_quit_event,
-    component::{Children, context::Component_context},
-    event::{Event, Key_code, Key_event, Pointer_event},
-    geometry::{Direction, Rect},
-    graphics::scene::Scene,
+    component::Children,
+    event::{Event, Key_event, Pointer_event},
+    geometry::Direction,
     handlers::{Retrieve_handler, Submit_handler},
-    layouter::hitbox::Hitbox,
-    slot::{Component_slot, manager::Slots},
-    state::{State, Store},
+    slot::Component_slot,
+    state::State,
     sync::{Mutex, Thread_safe},
-    theme::Theme,
     widget::{
-        Focus_provider, Layout_input, Render_input, Shared_widget, Widget, Widget_trait,
+        Layout_input, Render_input, Shared_widget, Widget, Widget_trait,
+        custom_widget::Custom_widget_trait,
         widgets::{
             button::Button,
             layout::{axis::Axis, grid::Grid},
             linebreak::Linebreak,
+            menu::{Menu, Menu_item},
             popup::Popup,
             positioning::{
                 anchor::{Anchor, Anchors, Position as Anchor_position},
@@ -167,205 +166,64 @@ impl Configuration_tree {
     }
 }
 
-#[derive_where(Clone)]
-struct Tree_view<T: Tree> {
-    tree: Arc<Mutex<T>>,
-    configurator_state: Arc<Mutex<Configurator_state>>,
-}
-
 #[derive(Clone)]
-struct Field_click_handler {
+struct Tree_menu_item {
+    name: String,
     cursor: Vec<String>,
-    configurator_state: Arc<Mutex<Configurator_state>>,
+    depth: usize,
 }
 
 #[async_trait]
-impl Submit_handler<bool> for Field_click_handler {
-    // I don't use label here as I think this argument should later be removed
-    async fn on_submit(&mut self, _focused: bool) -> Result<Vizual_msg> {
-        self.configurator_state.lock().await?.cursor = self.cursor.clone();
+impl Custom_widget_trait for Tree_menu_item {
+    type Payload = bool;
 
-        // This functionality of letting the mouse event bubble up to find the parent
-        // could be better documented
-        Vizual_msg::new_propagated(Vizual_command::Layout)
-    }
-}
-
-impl<T: Tree> Tree_view<T> {
-    #[async_recursion]
-    async fn render_tree(
-        &mut self,
-        node: &Configuration_tree_branch,
-        selected_cursor: &[String],
-        cursor: &[String],
-        theme: &Theme,
-        problem: &Component_context,
-        button_delta: vizual::layouter::variable::Variable,
-    ) -> Result<Vec<Widget>> {
-        const INDENT: usize = 50;
-
-        let mut buttons: Vec<Widget> = vec![];
-
-        for (name, child) in &node.0 {
-            let mut child_cursor = cursor.to_vec();
-            child_cursor.push(name.clone());
-            let depth = cursor.len();
-
-            let mut text = Text::new(name);
-            text.style.set(match selected_cursor == child_cursor {
-                true => theme.specific.text.selected_subtitle,
-                false => theme.specific.text.subtitle,
-            });
-
-            let mut button = Button::new(
-                text,
-                Field_click_handler {
-                    configurator_state: self.configurator_state.clone(),
-                    cursor: child_cursor.clone(),
-                },
-            );
-
-            button.delta = Some(button_delta.clone());
-
-            let button = Space::left(button, (INDENT * depth) as f64, 1);
-            let button = Anchor::left(button);
-
-            buttons.push(button.any());
-
-            if let Configuration_tree::Branch(branch) = child {
-                let mut child_tree = self
-                    .render_tree(
-                        branch,
-                        selected_cursor,
-                        &child_cursor,
-                        theme,
-                        problem,
-                        button_delta.clone(),
-                    )
-                    .await?;
-                buttons.append(&mut child_tree);
-            }
-        }
-
-        Ok(buttons)
-    }
-
-    async fn move_to_sibling(&mut self, offset: isize) -> Result<()> {
-        let cursor = self.configurator_state.lock().await?.cursor.clone();
-        let (leaf_key, branch_cursor) = cursor
-            .split_last()
-            .ok_or_else(|| eyre!("Cursor can't be empty"))?;
-
-        let tree = self.tree.lock().await?;
-        let branch = tree.get_tree().get_branch(branch_cursor)?;
-        let index = branch
-            .0
-            .get_index_of(leaf_key)
-            .ok_or_else(|| eyre!("Expected leaf"))?;
-        let new_key = branch
-            .0
-            .get_index(index.saturating_add_signed(offset))
-            .map(|(key, _)| key.to_string());
-        drop(tree);
-
-        if let Some(new_key) = new_key {
-            let mut configurator_state = self.configurator_state.lock().await?;
-
-            if configurator_state.cursor == cursor {
-                let leaf_key = configurator_state
-                    .cursor
-                    .last_mut()
-                    .ok_or_else(|| eyre!("Cursor can't be empty"))?;
-                *leaf_key = new_key;
-            }
-        }
-
-        Ok(())
-    }
-}
-
-#[async_trait]
-impl<T: Tree> Widget_trait for Tree_view<T> {
     async fn layout(
         &mut self,
         Layout_input {
             render,
             theme,
-            focus,
-            problem,
             slots,
             ..
         }: Layout_input<'_>,
+        selected: bool,
     ) -> Result<Children> {
-        focus.set_interactive(true);
-        let cursor = self.configurator_state.lock().await?.cursor.clone();
-        let button_delta = problem
-            .add_delta("configurator-tree-button-delta", 1)
-            .await?;
-
-        let theme = (*theme.affect(render).await?).clone();
-        let tree = self.tree.lock().await?.get_tree();
-        let buttons = self
-            .render_tree(&tree, &cursor, &[], &theme, &problem, button_delta)
-            .await?;
-
-        let axis = Axis::new(Direction::Vertical, buttons);
-
-        let block = Title_block::new(axis, "Config");
-        Ok(vec![display!(block)])
+        const INDENT: usize = 50;
+        let theme = theme.affect(render).await?;
+        let mut text = Text::new(&self.name);
+        text.style.set(match selected {
+            true => theme.specific.text.selected_subtitle,
+            false => theme.specific.text.subtitle,
+        });
+        let text = Space::left(text, (INDENT * self.depth) as f64, 1);
+        Ok(vec![display!(text)])
     }
+}
 
-    async fn render(&mut self, Render_input { focus, .. }: Render_input<'_, '_>) -> Result<()> {
-        focus.set_interactive(true);
-        Ok(())
+#[async_trait]
+impl Retrieve_handler<Vec<String>> for Tree_menu_item {
+    async fn on_retrieve(&mut self) -> Result<Vec<String>> {
+        Ok(self.cursor.clone())
     }
+}
 
-    async fn on_key_press(&mut self, key: &Key_event) -> Result<Vizual_msg> {
-        match key.code {
-            Key_code::Arrow_left => {
-                let mut configurator_state = self.configurator_state.lock().await?;
+fn collect_menu_items(
+    branch: &Configuration_tree_branch,
+    cursor: &[String],
+    items: &mut Vec<Menu_item<Vec<String>>>,
+) {
+    for (name, child) in &branch.0 {
+        let mut child_cursor = cursor.to_vec();
+        child_cursor.push(name.clone());
+        let depth = cursor.len();
 
-                if configurator_state.cursor.len() > 1 {
-                    let _ = configurator_state.cursor.pop();
-                    return Vizual_msg::new(Vizual_command::Layout);
-                }
+        items.push(Box::new(Tree_menu_item {
+            name: name.clone(),
+            cursor: child_cursor.clone(),
+            depth,
+        }));
 
-                Vizual_msg::none()
-            }
-            Key_code::Arrow_right => {
-                let cursor = self.configurator_state.lock().await?.cursor.clone();
-                let tree = self.tree.lock().await?;
-                let branch = match tree.get_tree().get_branch(&cursor) {
-                    Ok(branch) => branch,
-                    Err(_) => return Vizual_msg::none(),
-                };
-                let child_name = branch
-                    .0
-                    .get_index(0)
-                    .map(|(child_name, _)| child_name.clone());
-                drop(tree);
-
-                if let Some(child_name) = child_name {
-                    let mut configurator_state = self.configurator_state.lock().await?;
-
-                    if configurator_state.cursor == cursor {
-                        configurator_state.cursor.push(child_name);
-                    }
-
-                    return Vizual_msg::new(Vizual_command::Layout);
-                }
-
-                Vizual_msg::none()
-            }
-            Key_code::Arrow_down => {
-                self.move_to_sibling(1).await?;
-                Vizual_msg::new(Vizual_command::Layout)
-            }
-            Key_code::Arrow_up => {
-                self.move_to_sibling(-1).await?;
-                Vizual_msg::new(Vizual_command::Layout)
-            }
-            _ => Vizual_msg::none(),
+        if let Configuration_tree::Branch(branch) = child {
+            collect_menu_items(branch, &child_cursor, items);
         }
     }
 }
@@ -382,15 +240,11 @@ struct Config_manager_handle<T: Tree> {
     manager: Arc<Mutex<Config_manager<T>>>,
 }
 
-struct Configurator_state {
-    cursor: Vec<String>,
-}
-
 /// A widget editor for a [`Tree`].
 #[derive_where(Clone)]
 pub struct Configurator<T: Tree> {
     tree: Arc<Mutex<T>>,
-    configurator_state: Arc<Mutex<Configurator_state>>,
+    menu: Shared_widget<Menu<Vec<String>>>,
     config_manager: Config_manager_handle<T>,
     submit: Shared_widget<Popup>,
     submitting: bool,
@@ -438,13 +292,15 @@ pub async fn configurator<T: Tree>(
     tree: T,
     submit_handler: impl Submit_handler<bool>,
 ) -> Result<Configurator<T>> {
-    let child_name = tree
-        .get_tree()
-        .0
-        .get_index(0)
-        .map(|(child_name, _)| child_name.to_string())
-        .ok_or_else(|| eyre!("Expected atleast one leaf"))?;
+    let tree_branch = tree.get_tree();
+    let mut items = Vec::new();
+    collect_menu_items(&tree_branch, &[], &mut items);
 
+    if items.is_empty() {
+        return Err(eyre!("Expected at least one configuration item"));
+    }
+
+    let menu = Menu::new(items, 0).await?.into_shared();
     let tree = Arc::new(Mutex::new(tree));
 
     let config_manager = Config_manager_handle {
@@ -454,13 +310,10 @@ pub async fn configurator<T: Tree>(
             submit_handler: Box::new(submit_handler) as Box<dyn Submit_handler<bool>>,
         })),
     };
-    let configurator_state = Arc::new(Mutex::new(Configurator_state {
-        cursor: vec![child_name],
-    }));
 
     Ok(Configurator {
         tree,
-        configurator_state,
+        menu,
         config_manager: config_manager.clone(),
         submit: Popup::new(config_manager).await?.into_shared(),
         submitting: false,
@@ -482,11 +335,14 @@ impl<T: Tree> Widget_trait for Configurator<T> {
             ..
         }: Layout_input<'_>,
     ) -> Result<Children> {
-        let tree_view = Tree_view {
-            tree: self.tree.clone(),
-            configurator_state: self.configurator_state.clone(),
-        };
-        let cursor = self.configurator_state.lock().await?.cursor.clone();
+        let cursor = self
+            .menu
+            .lock()
+            .await?
+            .submitted
+            .affect(render.clone())
+            .await?
+            .clone();
 
         //TODO: this menu could later be moved into the menu item of the tree to make it clearer
         let field: Option<Widget> = {
@@ -515,14 +371,15 @@ impl<T: Tree> Widget_trait for Configurator<T> {
 
         let theme = theme.affect(render).await?;
         let gap = theme.semantic.axis.gap;
-        let tree_view = Anchor::new(
-            tree_view,
+        let menu_block = Title_block::new(self.menu.clone(), "Config");
+        let menu_view = Anchor::new(
+            menu_block,
             Anchors {
                 horizontal: Some(Anchor_position::Start),
                 vertical: Some(Anchor_position::Start),
             },
         );
-        let mut children: Vec<Widget> = vec![tree_view.any()];
+        let mut children: Vec<Widget> = vec![menu_view.any()];
 
         if let Some(field) = field {
             let field = Anchor::new(
