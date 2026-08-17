@@ -297,7 +297,7 @@ impl<T: Tree> Widget_trait for Tree_view<T> {
             ..
         }: Layout_input<'_>,
     ) -> Result<Children> {
-        focus.set_active(true);
+        focus.set_interactive(true);
         let cursor = self.configurator_state.lock().await?.cursor.clone();
         let button_delta = problem
             .add_delta("configurator-tree-button-delta", 1)
@@ -315,11 +315,8 @@ impl<T: Tree> Widget_trait for Tree_view<T> {
         Ok(vec![display!(block)])
     }
 
-    async fn render(
-        &mut self,
-        Render_input { focus, .. }: Render_input<'_, '_>,
-    ) -> Result<()> {
-        focus.set_active(true);
+    async fn render(&mut self, Render_input { focus, .. }: Render_input<'_, '_>) -> Result<()> {
+        focus.set_interactive(true);
         Ok(())
     }
 
