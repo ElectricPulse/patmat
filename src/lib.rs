@@ -115,9 +115,12 @@ impl Widget_trait for Builder {
 
         let metadata = Axis::new(Direction::Vertical, metadata_items);
 
-
         let panel: Vec<Widget> = if let Some(widget) = dependency.widget() {
-            vec![metadata.any(), Linebreak::new(Direction::Horizontal).any(), widget]
+            vec![
+                Anchor::left(metadata).any(),
+                Linebreak::new(Direction::Horizontal).any(),
+                widget,
+            ]
         } else {
             vec![Anchor::top_left(metadata).any()]
         };
