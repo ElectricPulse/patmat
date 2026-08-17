@@ -3366,7 +3366,6 @@ name = "patmat"
 version = "0.1.0"
 dependencies = [
  "ambassador",
- "arc-swap",
  "async-trait",
  "color-eyre",
  "derive-new",

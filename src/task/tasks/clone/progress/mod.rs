@@ -1,17 +1,12 @@
-use arc_swap::ArcSwap;
 use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use std::sync::{Arc, atomic::Ordering};
 use vizual::{
-    component::{Children, Render_context, context::Component_context},
+    component::Children,
     geometry::{Direction, Rect},
-    graphics::{scene::Scene, text::Text_context},
-    layouter::hitbox::Hitbox,
-    slot::manager::Slots,
     state::{State, Store},
-    theme::Theme,
     widget::{
-        Focus_provider, Layout_input, Render_input, Widget, Widget_trait,
+        Layout_input, Render_input, Widget, Widget_trait,
         widgets::{layout::axis::Axis, paper::Paper, positioning::anchor::Anchor, text::Text},
     },
 };
@@ -32,8 +27,6 @@ pub(super) enum Clone_progress {
     Complete,
     Failed(String),
 }
-
-pub(super) type Clone_progress_state = Arc<ArcSwap<Clone_progress>>;
 
 #[derive(Clone, Debug, PartialEq)]
 pub(super) struct Progress_row {
@@ -99,11 +92,11 @@ fn single_line(value: &str) -> String {
 
 #[derive(Clone)]
 pub(crate) struct Clone_progress_widget {
-    progress: Clone_progress_state,
+    progress: Store<Clone_progress>,
 }
 
 impl Clone_progress_widget {
-    pub(super) fn new(progress: Clone_progress_state) -> Self {
+    pub(super) fn new(progress: Store<Clone_progress>) -> Self {
         Self { progress }
     }
 }
@@ -119,14 +112,14 @@ impl Widget_trait for Clone_progress_widget {
             ..
         }: Layout_input<'_>,
     ) -> Result<Children> {
-        let progress = self.progress.load();
+        let progress = self.progress.affect(render.clone()).await?;
         let mut title = Text::new("Cloning repository");
         title
             .style
             .set(theme.affect(render).await?.specific.text.subtitle);
         let mut children: Vec<Widget> = vec![Anchor::left(title).any()];
 
-        match &**progress {
+        match &*progress {
             Clone_progress::Starting => {
                 children.push(Anchor::left(Text::new("0%")).any());
                 children.push(Progress_bar::new(0.0).any());
