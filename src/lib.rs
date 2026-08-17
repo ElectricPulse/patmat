@@ -114,21 +114,17 @@ impl Widget_trait for Builder {
         }
 
         let metadata = Axis::new(Direction::Vertical, metadata_items);
-        let mut panel: Vec<Widget> = vec![Box::new(metadata)];
-        if let Some(widget) = dependency.widget() {
-            panel.push(Box::new(Linebreak::new(Direction::Horizontal)));
-            panel.push(widget);
-        }
+
+
+        let panel: Vec<Widget> = if let Some(widget) = dependency.widget() {
+            vec![Box::new(metadata), Box::new(Linebreak::new(Direction::Horizontal)), widget]
+        } else {
+            vec![Box::new(Anchor::top_left(metadata))]
+        };
 
         let panel = Axis::new(Direction::Vertical, panel);
         children.push(Box::new(Linebreak::new(Direction::Vertical)));
-        children.push(Box::new(Anchor::new(
-            panel,
-            Anchors {
-                horizontal: None,
-                vertical: Some(Position::Start),
-            },
-        )));
+        children.push(Box::new(panel));
 
         let content = Axis::new(Direction::Horizontal, children);
         let working_directory = Anchor::left(Text::new(format!(
