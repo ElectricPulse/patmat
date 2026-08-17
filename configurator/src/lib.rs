@@ -194,8 +194,10 @@ impl Custom_widget_trait for Tree_menu_item {
             true => theme.specific.text.selected_subtitle,
             false => theme.specific.text.subtitle,
         });
-        let text = Space::left(text, (INDENT * self.depth) as f64, 1);
-        Ok(vec![display!(text)])
+        let mut button = Button::around(text);
+        button.highlighted = selected;
+        let button = Space::left(button, (INDENT * self.depth) as f64, 1);
+        Ok(vec![display!(button)])
     }
 }
 
@@ -300,7 +302,9 @@ pub async fn configurator<T: Tree>(
         return Err(eyre!("Expected at least one configuration item"));
     }
 
-    let menu = Menu::new(items, 0).await?.into_shared();
+    let mut menu = Menu::new(items, 0).await?;
+    menu.item_block = false;
+    let menu = menu.into_shared();
     let tree = Arc::new(Mutex::new(tree));
 
     let config_manager = Config_manager_handle {
