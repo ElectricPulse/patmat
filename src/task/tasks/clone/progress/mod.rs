@@ -124,37 +124,37 @@ impl Widget_trait for Clone_progress_widget {
         title
             .style
             .set(theme.affect(render).await?.specific.text.subtitle);
-        let mut children: Vec<Widget> = vec![Box::new(Anchor::left(title))];
+        let mut children: Vec<Widget> = vec![Anchor::left(title).any()];
 
         match &**progress {
             Clone_progress::Starting => {
-                children.push(Box::new(Anchor::left(Text::new("0%"))));
-                children.push(Box::new(Progress_bar::new(0.0)));
+                children.push(Anchor::left(Text::new("0%")).any());
+                children.push(Progress_bar::new(0.0).any());
             }
             Clone_progress::Running(rows) if rows.is_empty() => {
-                children.push(Box::new(Anchor::left(Text::new("0%"))));
-                children.push(Box::new(Progress_bar::new(0.0)));
+                children.push(Anchor::left(Text::new("0%")).any());
+                children.push(Progress_bar::new(0.0).any());
             }
             Clone_progress::Running(rows) => {
                 for row in rows {
-                    children.push(Box::new(Anchor::left(Text::new(format!(
+                    children.push(Anchor::left(Text::new(format!(
                         "{}: {}",
                         row.name, row.value
-                    )))));
+                    ))).any());
                     if let Some(fraction) = row.fraction {
-                        children.push(Box::new(Progress_bar::new(fraction)));
+                        children.push(Progress_bar::new(fraction).any());
                     }
                 }
             }
             Clone_progress::Complete => {
-                children.push(Box::new(Progress_bar::new(1.0)));
-                children.push(Box::new(Anchor::left(Text::new("Clone complete"))));
+                children.push(Progress_bar::new(1.0).any());
+                children.push(Anchor::left(Text::new("Clone complete")).any());
             }
             Clone_progress::Failed(error) => {
-                children.push(Box::new(Anchor::left(Text::new(format!(
+                children.push(Anchor::left(Text::new(format!(
                     "Clone failed: {}",
                     single_line(error)
-                )))));
+                ))).any());
             }
         }
 

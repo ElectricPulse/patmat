@@ -79,7 +79,7 @@ impl Widget_trait for Builder {
             ..
         }: Layout_input<'_>,
     ) -> Result<Children> {
-        let mut children: Vec<Widget> = vec![Box::new(self.target_tree.clone())];
+        let mut children: Vec<Widget> = vec![self.target_tree.clone().any()];
 
         let dependency = &*self.selected_dependency.affect(render.clone()).await?;
         let metadata = dependency.get_metadata();
@@ -101,30 +101,30 @@ impl Widget_trait for Builder {
         name.set_styled_content(name_content, theme.specific.text.title);
 
         let mut metadata_items: Vec<Widget> = vec![
-            Box::new(Anchor::left(name)),
-            Box::new(Anchor::left(Text::new(format!("Path: {path}")))),
-            Box::new(Anchor::left(Text::new(format!("Status: {status_label}")))),
+            Anchor::left(name).any(),
+            Anchor::left(Text::new(format!("Path: {path}"))).any(),
+            Anchor::left(Text::new(format!("Status: {status_label}"))).any(),
         ];
 
         if let Target_status::Error(error) = &status {
             let mut error_paragraph = Paragraph::new(Direction::Horizontal, theme.units.em * 25.0);
             error_paragraph.set_content(format!("{error:#}"));
-            metadata_items.push(Box::new(Anchor::left(Text::new("Error message:"))));
-            metadata_items.push(Box::new(Anchor::left(error_paragraph)));
+            metadata_items.push(Anchor::left(Text::new("Error message:")).any());
+            metadata_items.push(Anchor::left(error_paragraph).any());
         }
 
         let metadata = Axis::new(Direction::Vertical, metadata_items);
 
 
         let panel: Vec<Widget> = if let Some(widget) = dependency.widget() {
-            vec![Box::new(metadata), Box::new(Linebreak::new(Direction::Horizontal)), widget]
+            vec![metadata.any(), Linebreak::new(Direction::Horizontal).any(), widget]
         } else {
-            vec![Box::new(Anchor::top_left(metadata))]
+            vec![Anchor::top_left(metadata).any()]
         };
 
         let panel = Axis::new(Direction::Vertical, panel);
-        children.push(Box::new(Linebreak::new(Direction::Vertical)));
-        children.push(Box::new(panel));
+        children.push(Linebreak::new(Direction::Vertical).any());
+        children.push(panel.any());
 
         let content = Axis::new(Direction::Horizontal, children);
         let working_directory = Anchor::left(Text::new(format!(
@@ -133,7 +133,7 @@ impl Widget_trait for Builder {
         )));
         let axis = Axis::new(
             Direction::Vertical,
-            vec![Box::new(working_directory), Box::new(content)],
+            vec![working_directory.any(), content.any()],
         );
 
         Ok(vec![display!(axis)])

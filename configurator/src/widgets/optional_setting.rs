@@ -112,7 +112,7 @@ impl<Value: Thread_safe> Custom_widget_trait for Custom_leaf_value<Value> {
         let title = Anchor::left(title);
         let field = Anchor::left(self.field.clone());
 
-        let contents: Vec<Widget> = vec![Box::new(title), Box::new(field)];
+        let contents: Vec<Widget> = vec![title.any(), field.any()];
         let axis = Axis::new(Direction::Vertical, contents);
 
         Ok(vec![display!(axis)])

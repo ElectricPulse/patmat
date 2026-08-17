@@ -230,7 +230,7 @@ impl<T: Tree> Tree_view<T> {
             let button = Space::left(button, (INDENT * depth) as f64, 1);
             let button = Anchor::left(button);
 
-            buttons.push(Box::new(button));
+            buttons.push(button.any());
 
             if let Configuration_tree::Branch(branch) = child {
                 let mut child_tree = self
@@ -502,15 +502,15 @@ impl<T: Tree> Widget_trait for Configurator<T> {
                 let axis = Axis::new(
                     Direction::Vertical,
                     vec![
-                        Box::new(description),
-                        Box::new(Linebreak::new(Direction::Horizontal)),
+                        description.any(),
+                        Linebreak::new(Direction::Horizontal).any(),
                         leaf.widget,
                     ],
                 );
 
                 let leaf = Title_block::new(axis, leaf.name);
 
-                Some(Box::new(leaf))
+                Some(leaf.any())
             } else {
                 None
             }
@@ -525,7 +525,7 @@ impl<T: Tree> Widget_trait for Configurator<T> {
                 vertical: Some(Anchor_position::Start),
             },
         );
-        let mut children: Vec<Widget> = vec![Box::new(tree_view)];
+        let mut children: Vec<Widget> = vec![tree_view.any()];
 
         if let Some(field) = field {
             let field = Anchor::new(
@@ -536,7 +536,7 @@ impl<T: Tree> Widget_trait for Configurator<T> {
                 },
             );
 
-            children.push(Box::new(field));
+            children.push(field.any());
         }
 
         let mut text = Text::new("Apply");
@@ -550,7 +550,7 @@ impl<T: Tree> Widget_trait for Configurator<T> {
             },
         );
 
-        children.push(Box::new(button));
+        children.push(button.any());
 
         let grid = Grid::new(children, gap);
 

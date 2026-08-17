@@ -66,14 +66,14 @@ impl Custom_widget_trait for Target_tree_item {
         let name = Text::new(metadata.name);
         let name = Anchor::left(name);
 
-        let mut details: Vec<Widget> = vec![Box::new(name)];
+        let mut details: Vec<Widget> = vec![name.any()];
 
         let path = metadata.path.affect(render).await?.clone();
         if let Some(path) = path {
             let path = display_target_path(&path, &self.working_directory);
             let path = Text::new(format!("- {path}"));
             let path = Anchor::left(path);
-            details.push(Box::new(path));
+            details.push(path.any());
         }
 
         let details = Axis::new(Direction::Vertical, details);
@@ -81,7 +81,7 @@ impl Custom_widget_trait for Target_tree_item {
 
         let row = Axis::new(
             Direction::Horizontal,
-            vec![Box::new(details), Box::new(icon)],
+            vec![details.any(), icon.any()],
         );
 
         Ok(vec![display!(row)])
