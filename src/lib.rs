@@ -117,15 +117,17 @@ impl Widget_trait for Builder {
 
         let panel: Vec<Widget> = if let Some(widget) = dependency.widget() {
             vec![
-                Anchor::left(metadata).any(),
+                metadata.any(),
                 Linebreak::new(Direction::Horizontal).any(),
                 widget,
             ]
         } else {
-            vec![Anchor::top_left(metadata).any()]
+            vec![metadata.any()]
         };
 
-        let panel = Axis::new(Direction::Vertical, panel);
+        let mut panel = Axis::new(Direction::Vertical, panel);
+        panel.limit_cross = true;
+        let panel = Anchor::top(panel);
         children.push(Linebreak::new(Direction::Vertical).any());
         children.push(panel.any());
 
