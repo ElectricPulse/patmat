@@ -9,7 +9,6 @@ use crate::task::Status;
 pub enum Target_status {
     Unsatisfied,
     Running,
-    User_interaction,
     // Error is gonna be read only so an Arc is fine
     Error(Arc<Error>),
     Satisfied(Status),
@@ -22,7 +21,6 @@ impl Target_status {
             Target_status::Unsatisfied => "Unsatisfied",
             Target_status::Running_dependencies => "Running dependencies",
             Target_status::Running => "Running",
-            Target_status::User_interaction => "User interaction",
             Target_status::Satisfied(Status::Built) => "Built",
             Target_status::Satisfied(Status::Already_built) => "Already built",
             Target_status::Error(_) => "Error",
@@ -34,7 +32,6 @@ impl Target_status {
             Target_status::Unsatisfied => Icon::CircleDashed,
             Target_status::Running_dependencies => Icon::CircleEllipsis,
             Target_status::Running => Icon::Loader,
-            Target_status::User_interaction => Icon::User,
             Target_status::Satisfied(status) => match status {
                 Status::Built => Icon::Hammer,
                 Status::Already_built => Icon::CheckCircle,
