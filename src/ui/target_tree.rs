@@ -45,11 +45,13 @@ impl Custom_widget_trait for Target_tree_item {
         &mut self,
         Layout_input {
             render,
+            theme,
             slots,
             ..
         }: Layout_input<'_>,
-        _selected: bool,
+        selected: bool,
     ) -> Result<Children> {
+        let theme = theme.affect(render.clone()).await?;
         let metadata = self.target.get_metadata();
 
         let icon = Icon::new(metadata.status.affect(render.clone()).await?.get_icon());
@@ -61,7 +63,12 @@ impl Custom_widget_trait for Target_tree_item {
             },
         );
 
-        let name = Text::new(metadata.name);
+        let mut name = Text::new(metadata.name);
+        let mut name_style = theme.specific.text.button;
+        if !selected {
+            name_style.color = theme.semantic.text.muted;
+        }
+        name.style.set(name_style);
         let name = Anchor::left(name);
 
         let path = metadata.path.affect(render).await?.clone();
