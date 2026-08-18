@@ -32,8 +32,8 @@ struct Target_tree_item {
 
 #[async_trait::async_trait]
 impl Retrieve_handler<Dependency> for Target_tree_item {
-    async fn on_retrieve(&mut self) -> Result<Dependency> {
-        Ok(self.target.clone())
+    async fn on_retrieve(&mut self) -> Result<State<Dependency>> {
+        Ok(self.target.clone().into())
     }
 }
 
@@ -136,7 +136,7 @@ impl Widget_trait for Target_tree {
         let default_index = selected_index.min(targets.len().saturating_sub(1));
         let mut menu = Menu::new(targets, default_index).await?;
         menu.selected = self.selected_index.clone();
-        menu.submitted = self.selected.clone();
+        menu.set_submitted(self.selected.clone()).await?;
 
         Ok(vec![display!(menu)])
     }

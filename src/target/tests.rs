@@ -17,8 +17,8 @@ async fn metadata_clones_share_each_store() -> Result<()> {
     let target = Target::new_independent("before", None, Task::new(Empty_task));
     let metadata = target.get_metadata();
 
-    *metadata.name.write().await? = "after".to_owned();
-    *metadata.path.write().await? = Some(PathBuf::from("updated"));
+    metadata.name.set("after".to_owned()).await?;
+    metadata.path.set(Some(PathBuf::from("updated"))).await?;
 
     let current = target.get_metadata();
     assert_eq!(&*current.name.read().await?, "after");

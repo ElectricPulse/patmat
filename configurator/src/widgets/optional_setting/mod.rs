@@ -1,12 +1,13 @@
+use std::{marker::PhantomData, sync::Arc};
 use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use derive_where::derive_where;
-use std::marker::PhantomData;
 use vizual::geometry::Direction;
 use vizual::{
+    Render,
     component::Children,
     handlers::Retrieve_handler,
-    state::State,
+    state::{Constant, Read_guard, State, State_trait},
     sync::Thread_safe,
     widget::{
         Layout_input, Widget_trait,
@@ -23,6 +24,24 @@ use vizual_macros::display;
 
 use crate::Field;
 
+#[derive(Clone)]
+struct Some_state<Value: Thread_safe>(State<Value>);
+
+#[async_trait]
+impl<Value: Thread_safe + Clone> State_trait for Some_state<Value> {
+    type Output = Option<Value>;
+
+    async fn read(&self) -> Result<Read_guard<Self::Output>> {
+        let guard = self.0.read().await?;
+        Ok(Read_guard::new(Arc::new(Some((*guard).clone()))))
+    }
+
+    async fn affect(&self, signal: Render) -> Result<Read_guard<Self::Output>> {
+        let guard = self.0.affect(signal).await?;
+        Ok(Read_guard::new(Arc::new(Some((*guard).clone()))))
+    }
+}
+
 #[derive_where(Clone)]
 struct Default_leaf_value<Value: Thread_safe> {
     label: String,
@@ -31,8 +50,8 @@ struct Default_leaf_value<Value: Thread_safe> {
 
 #[async_trait]
 impl<Value: Thread_safe> Retrieve_handler<Option<Value>> for Default_leaf_value<Value> {
-    async fn on_retrieve(&mut self) -> Result<Option<Value>> {
-        Ok(None)
+    async fn on_retrieve(&mut self) -> Result<State<Option<Value>>> {
+        Ok(Constant::from(None).into())
     }
 }
 
@@ -67,10 +86,10 @@ struct Custom_leaf_value<Value: Thread_safe> {
 }
 
 #[async_trait]
-impl<Value: Thread_safe> Retrieve_handler<Option<Value>> for Custom_leaf_value<Value> {
-    async fn on_retrieve(&mut self) -> Result<Option<Value>> {
-        let value = self.field.on_retrieve().await?;
-        Ok(Some(value))
+impl<Value: Thread_safe + Clone> Retrieve_handler<Option<Value>> for Custom_leaf_value<Value> {
+    async fn on_retrieve(&mut self) -> Result<State<Option<Value>>> {
+        let inner_state = self.field.on_retrieve().await?;
+        Ok(Box::new(Some_state(inner_state)))
     }
 }
 
@@ -132,6 +151,10 @@ impl<Value: Clone + Thread_safe> Optional_setting<Value> {
         let menu = Menu::new(items, default_index).await?;
         Ok(Self { menu })
     }
+
+    pub async fn set_is_default(&mut self, is_default: bool) -> Result<()> {
+        self.menu.set_index(usize::from(!is_default)).await
+    }
 }
 
 #[async_trait]
@@ -146,7 +169,10 @@ impl<Value: Clone + Thread_safe> Widget_trait for Optional_setting<Value> {
 
 #[async_trait]
 impl<Value: Clone + Thread_safe> Retrieve_handler<Option<Value>> for Optional_setting<Value> {
-    async fn on_retrieve(&mut self) -> Result<Option<Value>> {
+    async fn on_retrieve(&mut self) -> Result<State<Option<Value>>> {
         self.menu.on_retrieve().await
     }
 }
+
+#[cfg(test)]
+mod tests;

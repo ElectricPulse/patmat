@@ -61,7 +61,7 @@ impl task::Task_trait for Task {
     type Output = ();
 
     async fn run(&self, widget: Store<Option<Widget>>) -> task::Task_result {
-        *widget.write().await? = Some(self.terminal.clone().as_any());
+        widget.set(Some(self.terminal.clone().as_any())).await?;
 
         let handle = match &self.working_dir {
             Some(working_dir) => self.terminal.run_in_dir(&self.command, working_dir),

@@ -132,7 +132,7 @@ impl<Output: Output_constraints> Target<Output> {
     }
 
     async fn set_status(&self, status: Target_status) -> Result<()> {
-        *self.metadata.status.write().await? = status;
+        self.metadata.status.set(status).await?;
         Ok(())
     }
 }

@@ -1,9 +1,3 @@
-#![warn(rustdoc::broken_intra_doc_links)]
-//! Tree-based configuration editing for Vizual applications.
-//!
-//! Implement [`Tree`] to describe editable fields and produce a serializable
-//! configuration.
-
 pub mod widgets;
 
 use std::{
@@ -13,39 +7,36 @@ use std::{
 };
 
 use async_trait::async_trait;
-use color_eyre::eyre::{Result, WrapErr, eyre};
+use color_eyre::eyre::{Context, Result, eyre};
 use derive_where::derive_where;
 use indexmap::IndexMap;
 use serde::Serialize;
+use vizual_macros::display;
+
 use vizual::{
-    Vizual_msg,
+    Vizual_command, Vizual_msg,
     component::Children,
     event::{Event, Key_event, Pointer_event},
     geometry::Direction,
     handlers::{Retrieve_handler, Submit_handler},
-    state::State,
+    state::{State, State_trait},
     sync::{Mutex, Thread_safe},
     widget::{
         Layout_input, Render_input, Widget, Widget_trait,
         custom_widget::Custom_widget_trait,
         widgets::{
             button::Button,
-            layout::{axis::Axis, grid::Grid},
-            linebreak::Linebreak,
+            layout::axis::Axis,
             menu::{Menu, Menu_item},
-            positioning::{
-                anchor::{Anchor, Anchors, Position as Anchor_position},
-                space::Space,
-            },
+            paper::Paper,
+            positioning::{anchor::Anchor, space::Space},
             text::Text,
-            title_block::Title_block,
         },
     },
 };
-use vizual_macros::display;
 
+/// A configuration hierarchy capable of generating widgets and parsing output.
 #[async_trait]
-/// Supplies the fields displayed by a [`Configurator`].
 pub trait Tree: Thread_safe {
     type Configuration: Serialize + Thread_safe + Clone;
 
@@ -55,18 +46,18 @@ pub trait Tree: Thread_safe {
 
 #[async_trait]
 /// A widget field that can return a configured value.
-pub trait Field<Value>: Widget_trait + Retrieve_handler<Value> {}
+pub trait Field<Value: Thread_safe>: Widget_trait + Retrieve_handler<Value> {}
 
-dyn_clone::clone_trait_object!(<Value> Field<Value>);
+dyn_clone::clone_trait_object!(<Value> Field<Value> where Value: Thread_safe);
 
-impl<T, Value> Field<Value> for T
+impl<T, Value: Thread_safe> Field<Value> for T
 where
     T: Widget_trait + Retrieve_handler<Value> + Clone + 'static,
 {
 }
 
 #[async_trait]
-impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
+impl<Value: Thread_safe + 'static> Widget_trait for Box<dyn Field<Value>> {
     async fn layout(&mut self, input: Layout_input<'_>) -> Result<Children> {
         (**self).layout(input).await
     }
@@ -97,8 +88,8 @@ impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
 }
 
 #[async_trait]
-impl<Value: 'static> Retrieve_handler<Value> for Box<dyn Field<Value>> {
-    async fn on_retrieve(&mut self) -> Result<Value> {
+impl<Value: Thread_safe + 'static> Retrieve_handler<Value> for Box<dyn Field<Value>> {
+    async fn on_retrieve(&mut self) -> Result<State<Value>> {
         (**self).on_retrieve().await
     }
 }
@@ -123,27 +114,27 @@ impl Configuration_tree_branch {
         Ok(node)
     }
 
-    pub fn get_branch(self, cursor: &[String]) -> Result<Self> {
-        self.get_node(cursor)?
-            .into_branch()
-            .map_err(|_| eyre!("Expected branch"))
+    pub fn get_leaf(self, cursor: &[String]) -> Result<Configuration_tree_leaf> {
+        match self.get_node(cursor)? {
+            Configuration_tree::Leaf(leaf) => Ok(leaf),
+            Configuration_tree::Branch(_) => Err(eyre!("Expected leaf")),
+        }
     }
 
-    pub fn get_leaf(self, cursor: &[String]) -> Result<Configuration_tree_leaf> {
-        self.get_node(cursor)?
-            .into_leaf()
-            .map_err(|_| eyre!("Expected leaf"))
+    pub fn get_branch(self, cursor: &[String]) -> Result<Configuration_tree_branch> {
+        match self.get_node(cursor)? {
+            Configuration_tree::Branch(branch) => Ok(branch),
+            Configuration_tree::Leaf(_) => Err(eyre!("Expected branch")),
+        }
     }
 }
 
-/// A single editable configuration field.
 pub struct Configuration_tree_leaf {
     pub widget: Widget,
-    pub description: String,
     pub name: String,
+    pub description: String,
 }
 
-/// A branch or editable leaf in a configuration tree.
 pub enum Configuration_tree {
     Branch(Configuration_tree_branch),
     Leaf(Configuration_tree_leaf),
@@ -160,20 +151,6 @@ impl Configuration_tree {
             description: description.into(),
             name: name.into(),
         })
-    }
-
-    fn into_branch(self) -> std::result::Result<Configuration_tree_branch, Self> {
-        match self {
-            Self::Branch(branch) => Ok(branch),
-            value => Err(value),
-        }
-    }
-
-    fn into_leaf(self) -> std::result::Result<Configuration_tree_leaf, Self> {
-        match self {
-            Self::Leaf(leaf) => Ok(leaf),
-            value => Err(value),
-        }
     }
 }
 
@@ -214,8 +191,8 @@ impl Custom_widget_trait for Tree_menu_item {
 
 #[async_trait]
 impl Retrieve_handler<Vec<String>> for Tree_menu_item {
-    async fn on_retrieve(&mut self) -> Result<Vec<String>> {
-        Ok(self.cursor.clone())
+    async fn on_retrieve(&mut self) -> Result<State<Vec<String>>> {
+        Ok(self.cursor.clone().into())
     }
 }
 
@@ -306,7 +283,8 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
     ) -> Result<Children> {
         let cursor = self
             .menu
-            .submitted
+            .on_retrieve()
+            .await?
             .affect(render.clone())
             .await?
             .clone();
@@ -319,58 +297,30 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
                 let description = Text::new(leaf.description);
                 let description = Anchor::left(description);
 
-                let axis = Axis::new(
-                    Direction::Vertical,
-                    (
-                        description,
-                        Linebreak::new(Direction::Horizontal),
-                        leaf.widget,
-                    ),
-                );
-
-                let leaf = Title_block::new(axis, leaf.name);
-
-                Some(leaf.as_any())
+                let axis = Axis::new(Direction::Vertical, (description, leaf.widget));
+                let axis = Paper::new(axis);
+                let axis = Anchor::middle(axis);
+                Some(axis.as_any())
             } else {
                 None
             }
         };
 
-        let theme = theme.affect(render).await?;
-        let gap = theme.semantic.axis.gap;
-        let menu_block = Title_block::new(self.menu.clone(), "Config");
-        let menu_view = Anchor::new(
-            menu_block,
-            Anchors {
-                horizontal: Some(Anchor_position::Start),
-                vertical: Some(Anchor_position::Start),
-            },
-        );
+        let tree = Anchor::left(self.menu.clone());
+        let tree = Paper::new(tree);
 
-        let mut text = Text::new("Apply");
-        text.style.set(theme.specific.text.selected_subtitle);
-        let button = Button::new(text, self.clone());
-        let button = Anchor::new(
-            button,
-            Anchors {
-                horizontal: Some(Anchor_position::End),
-                vertical: Some(Anchor_position::End),
-            },
-        );
+        let submit_button = Button::new(Text::new("Apply"), self.clone());
+        let submit_button = Anchor::left(submit_button);
+        let submit_button = Paper::new(submit_button);
 
-        let grid = if let Some(field) = field {
-            let field = Anchor::new(
-                field,
-                Anchors {
-                    horizontal: Some(Anchor_position::End),
-                    vertical: Some(Anchor_position::Start),
-                },
-            );
-            Grid::new((menu_view, field, button), gap)
-        } else {
-            Grid::new((menu_view, button), gap)
+        let left_axis = Axis::new(Direction::Vertical, (tree, submit_button));
+        let left_axis = Anchor::middle(left_axis);
+
+        let final_axis: Widget = match field {
+            Some(field) => Axis::new(Direction::Horizontal, (left_axis, field)).as_any(),
+            None => left_axis.as_any(),
         };
 
-        Ok(vec![display!(grid)])
+        Ok(vec![display!(final_axis)])
     }
 }

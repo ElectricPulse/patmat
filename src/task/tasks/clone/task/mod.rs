@@ -42,7 +42,7 @@ impl task::Task_trait for Task {
     type Output = ();
 
     async fn run(&self, widget: Store<Option<Widget>>) -> task::Task_result {
-        *widget.write().await? = Some(Anchor::middle(self.widget()).as_any());
+        widget.set(Some(Anchor::middle(self.widget()).as_any())).await?;
 
         let git_dir = self.path.join(".git");
 
@@ -50,11 +50,11 @@ impl task::Task_trait for Task {
             .try_exists()
             .wrap_err_with(|| format!("Failed to inspect {}", git_dir.display()))?;
         if git_directory_exists && git_dir.is_dir() {
-            *self.progress.write().await? = Clone_progress::Complete;
+            self.progress.set(Clone_progress::Complete).await?;
             return Ok(((), task::Status::Already_built));
         }
 
-        *self.progress.write().await? = Clone_progress::Starting;
+        self.progress.set(Clone_progress::Starting).await?;
 
         let progress = gix::progress::tree::Root::new();
         let worker_progress = Arc::clone(&progress);
@@ -75,7 +75,7 @@ impl task::Task_trait for Task {
                 _ = refresh.tick() => {
                     let snapshot = Clone_progress::from_tree(&progress);
                     if *self.progress.read().await? != snapshot {
-                        *self.progress.write().await? = snapshot;
+                        self.progress.set(snapshot).await?;
                     }
                 }
             }
@@ -83,13 +83,13 @@ impl task::Task_trait for Task {
 
         match result {
             Ok(()) => {
-                *self.progress.write().await? = Clone_progress::Complete;
+                self.progress.set(Clone_progress::Complete).await?;
                 Ok(((), task::Status::Built))
             }
             Err(error) => {
-                *self.progress
-                    .write()
-                    .await? = Clone_progress::Failed(format!("{error:#}"));
+                self.progress
+                    .set(Clone_progress::Failed(format!("{error:#}")))
+                    .await?;
                 Err(error)
             }
         }
