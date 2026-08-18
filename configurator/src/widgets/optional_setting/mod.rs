@@ -67,14 +67,13 @@ impl<Value: Thread_safe> Custom_widget_trait for Default_leaf_value<Value> {
             slots,
             ..
         }: Layout_input<'_>,
-        selected: bool,
+        _selected: bool,
     ) -> Result<Children> {
         let theme = theme.affect(render).await?;
         let mut text = Text::new(format!("Default - {}", self.label));
-        text.style.set(match selected {
-            true => theme.specific.text.selected_subtitle,
-            false => theme.specific.text.subtitle,
-        });
+        let mut style = theme.specific.text.paragraph;
+        style.color = theme.semantic.text.muted;
+        text.style.set(style);
 
         Ok(vec![display!(text)])
     }
@@ -109,11 +108,9 @@ impl<Value: Thread_safe> Custom_widget_trait for Custom_leaf_value<Value> {
     ) -> Result<Children> {
         let theme = theme.affect(render).await?;
         let mut title = Text::new("Custom");
-
-        title.style.set(match selected {
-            true => theme.specific.text.selected_subtitle,
-            false => theme.specific.text.subtitle,
-        });
+        let mut style = theme.specific.text.paragraph;
+        style.color = theme.semantic.text.muted;
+        title.style.set(style);
 
         if !selected {
             return Ok(vec![display!(title)]);
