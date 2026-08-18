@@ -244,6 +244,7 @@ impl<Tree: crate::Tree> Submit_handler<bool> for Configurator<Tree> {
         let string =
             serde_saphyr::to_string(&config).wrap_err("Failed to serialize configuration")?;
         fs::write(&self.configuration_path, string).wrap_err("Failed to save configuration")?;
+        println!("Configuration saved to {}", self.configuration_path.display());
 
         if let Some(submit_handler) = &mut self.submit_handler {
             return submit_handler.on_submit(config).await;
@@ -253,7 +254,6 @@ impl<Tree: crate::Tree> Submit_handler<bool> for Configurator<Tree> {
     }
 }
 
-/// Creates a configurator that optionally saves YAML to `configuration_path`.
 pub async fn new<Tree: crate::Tree>(
     configuration_path: impl AsRef<Path>,
     tree: Tree,
