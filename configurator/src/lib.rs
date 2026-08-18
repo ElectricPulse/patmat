@@ -26,7 +26,7 @@ use vizual::{
     state::State,
     sync::{Mutex, Thread_safe},
     widget::{
-        Layout_input, Render_input, Shared_widget, Widget, Widget_trait,
+        Layout_input, Render_input, Widget, Widget_trait,
         custom_widget::Custom_widget_trait,
         widgets::{
             button::Button,
@@ -54,10 +54,16 @@ pub trait Tree: Thread_safe {
 }
 
 #[async_trait]
-/// A widget field that can return an optional configured value.
-pub trait Field<Value>: Widget_trait + Retrieve_handler<Option<Value>> {}
+/// A widget field that can return a configured value.
+pub trait Field<Value>: Widget_trait + Retrieve_handler<Value> {}
 
 dyn_clone::clone_trait_object!(<Value> Field<Value>);
+
+impl<T, Value> Field<Value> for T
+where
+    T: Widget_trait + Retrieve_handler<Value> + Clone + 'static,
+{
+}
 
 #[async_trait]
 impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
@@ -91,13 +97,11 @@ impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
 }
 
 #[async_trait]
-impl<Value: 'static> Retrieve_handler<Option<Value>> for Box<dyn Field<Value>> {
-    async fn on_retrieve(&mut self) -> Result<Option<Value>> {
+impl<Value: 'static> Retrieve_handler<Value> for Box<dyn Field<Value>> {
+    async fn on_retrieve(&mut self) -> Result<Value> {
         (**self).on_retrieve().await
     }
 }
-
-impl<Value: 'static> Field<Value> for Box<dyn Field<Value>> {}
 
 /// An ordered group of configuration nodes.
 pub struct Configuration_tree_branch(pub IndexMap<String, Configuration_tree>);
@@ -146,13 +150,13 @@ pub enum Configuration_tree {
 }
 
 impl Configuration_tree {
-    pub fn new_leaf<T: Widget_trait>(
-        field: &Shared_widget<T>,
+    pub fn new_leaf(
+        field: &(impl Widget_trait + Clone + 'static),
         name: impl Into<String>,
         description: impl Into<String>,
     ) -> Self {
         Self::Leaf(Configuration_tree_leaf {
-            widget: field.clone().into(),
+            widget: field.clone().as_any(),
             description: description.into(),
             name: name.into(),
         })
@@ -241,7 +245,7 @@ fn collect_menu_items(
 #[derive_where(Clone)]
 pub struct Configurator<Tree: crate::Tree> {
     tree: Arc<Mutex<Tree>>,
-    menu: Shared_widget<Menu<Vec<String>>>,
+    menu: Menu<Vec<String>>,
     submit_handler: Option<Box<dyn Submit_handler<Tree::Configuration>>>,
     configuration_path: PathBuf,
 }
@@ -278,7 +282,6 @@ pub async fn new<Tree: crate::Tree>(
 
     let mut menu = Menu::new(items, 0).await?;
     menu.item_block = false;
-    let menu = menu.into_shared();
     let tree = Arc::new(Mutex::new(tree));
 
     Ok(Configurator {
@@ -303,8 +306,6 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
     ) -> Result<Children> {
         let cursor = self
             .menu
-            .lock()
-            .await?
             .submitted
             .affect(render.clone())
             .await?
