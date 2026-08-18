@@ -102,7 +102,7 @@ impl Widget_trait for Builder {
 
         let metadata = if let Target_status::Error(error) = &status {
             let mut error_paragraph = Paragraph::new(Direction::Horizontal, theme.units.em * 25.0);
-            error_paragraph.set_content(format!("{error:#}"));
+            error_paragraph.set_styled_content(format!("{error:#}"), theme.specific.text.paragraph);
             let error_title = Anchor::left(Text::new("Error message:"));
             let error_body = Anchor::left(error_paragraph);
             Axis::new(Direction::Vertical, (name_item, path_item, status_item, error_title, error_body))
