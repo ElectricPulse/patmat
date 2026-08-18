@@ -311,16 +311,16 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
 
                 let axis = Axis::new(
                     Direction::Vertical,
-                    vec![
-                        description.any(),
-                        Linebreak::new(Direction::Horizontal).any(),
+                    (
+                        description,
+                        Linebreak::new(Direction::Horizontal),
                         leaf.widget,
-                    ],
+                    ),
                 );
 
                 let leaf = Title_block::new(axis, leaf.name);
 
-                Some(leaf.any())
+                Some(leaf.as_any())
             } else {
                 None
             }
@@ -336,19 +336,6 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
                 vertical: Some(Anchor_position::Start),
             },
         );
-        let mut children: Vec<Widget> = vec![menu_view.any()];
-
-        if let Some(field) = field {
-            let field = Anchor::new(
-                field,
-                Anchors {
-                    horizontal: Some(Anchor_position::End),
-                    vertical: Some(Anchor_position::Start),
-                },
-            );
-
-            children.push(field.any());
-        }
 
         let mut text = Text::new("Apply");
         text.style.set(theme.specific.text.selected_subtitle);
@@ -361,9 +348,18 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
             },
         );
 
-        children.push(button.any());
-
-        let grid = Grid::new(children, gap);
+        let grid = if let Some(field) = field {
+            let field = Anchor::new(
+                field,
+                Anchors {
+                    horizontal: Some(Anchor_position::End),
+                    vertical: Some(Anchor_position::Start),
+                },
+            );
+            Grid::new((menu_view, field, button), gap)
+        } else {
+            Grid::new((menu_view, button), gap)
+        };
 
         Ok(vec![display!(grid)])
     }

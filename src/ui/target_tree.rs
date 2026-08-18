@@ -8,7 +8,7 @@ use vizual::{
     handlers::Retrieve_handler,
     state::{State, Store},
     widget::{
-        Layout_input, Widget, Widget_trait,
+        Layout_input, Widget_trait,
         custom_widget::Custom_widget_trait,
         widgets::{
             icon::Icon,
@@ -64,22 +64,20 @@ impl Custom_widget_trait for Target_tree_item {
         let name = Text::new(metadata.name);
         let name = Anchor::left(name);
 
-        let mut details: Vec<Widget> = vec![name.any()];
-
         let path = metadata.path.affect(render).await?.clone();
-        if let Some(path) = path {
-            let path = display_target_path(&path, &self.working_directory);
-            let path = Text::new(format!("- {path}"));
-            let path = Anchor::left(path);
-            details.push(path.any());
-        }
-
-        let details = Axis::new(Direction::Vertical, details);
+        let details = match path {
+            Some(path) => {
+                let path = display_target_path(&path, &self.working_directory);
+                let path = Anchor::left(Text::new(format!("- {path}")));
+                Axis::new(Direction::Vertical, (name, path))
+            }
+            None => Axis::new(Direction::Vertical, (name,)),
+        };
         let details = Anchor::left(details);
 
         let row = Axis::new(
             Direction::Horizontal,
-            vec![details.any(), icon.any()],
+            (details, icon),
         );
 
         Ok(vec![display!(row)])

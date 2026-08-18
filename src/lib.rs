@@ -18,7 +18,7 @@ use vizual::{
     geometry::Direction,
     state::{State, Store},
     widget::{
-        Layout_input, Shared_widget, Widget, Widget_trait,
+        Layout_input, Shared_widget, Widget_trait,
         widgets::{
             layout::axis::Axis,
             linebreak::Linebreak,
@@ -77,8 +77,6 @@ impl Widget_trait for Builder {
             ..
         }: Layout_input<'_>,
     ) -> Result<Children> {
-        let mut children: Vec<Widget> = vec![self.target_tree.clone().any()];
-
         let dependency = &*self.selected_dependency.affect(render.clone()).await?;
         let metadata = dependency.get_metadata();
         let name_content = metadata.name.affect(render.clone()).await?.clone();
@@ -98,46 +96,38 @@ impl Widget_trait for Builder {
         let mut name = Paragraph::new(Direction::Horizontal, theme.units.em * 15.0);
         name.set_styled_content(name_content, theme.specific.text.title);
 
-        let mut metadata_items: Vec<Widget> = vec![
-            Anchor::left(name).any(),
-            Anchor::left(Text::new(format!("Path: {path}"))).any(),
-            Anchor::left(Text::new(format!("Status: {status_label}"))).any(),
-        ];
+        let name_item = Anchor::left(name);
+        let path_item = Anchor::left(Text::new(format!("Path: {path}")));
+        let status_item = Anchor::left(Text::new(format!("Status: {status_label}")));
 
-        if let Target_status::Error(error) = &status {
+        let metadata = if let Target_status::Error(error) = &status {
             let mut error_paragraph = Paragraph::new(Direction::Horizontal, theme.units.em * 25.0);
             error_paragraph.set_content(format!("{error:#}"));
-            metadata_items.push(Anchor::left(Text::new("Error message:")).any());
-            metadata_items.push(Anchor::left(error_paragraph).any());
-        }
-
-        let metadata = Axis::new(Direction::Vertical, metadata_items);
-
-        let widget = dependency.widget().affect(render.clone()).await?.clone();
-        let panel: Vec<Widget> = if let Some(widget) = widget {
-            vec![
-                metadata.any(),
-                Linebreak::new(Direction::Horizontal).any(),
-                widget,
-            ]
+            let error_title = Anchor::left(Text::new("Error message:"));
+            let error_body = Anchor::left(error_paragraph);
+            Axis::new(Direction::Vertical, (name_item, path_item, status_item, error_title, error_body))
         } else {
-            vec![metadata.any()]
+            Axis::new(Direction::Vertical, (name_item, path_item, status_item))
         };
 
-        let mut panel = Axis::new(Direction::Vertical, panel);
+        let widget = dependency.widget().affect(render.clone()).await?.clone();
+        let mut panel = if let Some(widget) = widget {
+            Axis::new(Direction::Vertical, (metadata, Linebreak::new(Direction::Horizontal), widget))
+        } else {
+            Axis::new(Direction::Vertical, (metadata,))
+        };
+
         panel.limit_cross = true;
         let panel = Anchor::top(panel);
-        children.push(Linebreak::new(Direction::Vertical).any());
-        children.push(panel.any());
 
-        let content = Axis::new(Direction::Horizontal, children);
+        let content = Axis::new(Direction::Horizontal, (self.target_tree.clone(), Linebreak::new(Direction::Vertical), panel));
         let working_directory = Anchor::left(Text::new(format!(
             "Working directory: {}",
             self.working_directory.display()
         )));
         let axis = Axis::new(
             Direction::Vertical,
-            vec![working_directory.any(), content.any()],
+            (working_directory, content),
         );
 
         Ok(vec![display!(axis)])

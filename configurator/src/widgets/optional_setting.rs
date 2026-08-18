@@ -9,7 +9,7 @@ use vizual::{
     state::State,
     sync::Thread_safe,
     widget::{
-        Layout_input, Shared_widget, Widget, Widget_trait,
+        Layout_input, Shared_widget, Widget_trait,
         custom_widget::Custom_widget_trait,
         widgets::{
             layout::axis::Axis,
@@ -109,8 +109,7 @@ impl<Value: Thread_safe> Custom_widget_trait for Custom_leaf_value<Value> {
         let title = Anchor::left(title);
         let field = Anchor::left(self.field.clone());
 
-        let contents: Vec<Widget> = vec![title.any(), field.any()];
-        let axis = Axis::new(Direction::Vertical, contents);
+        let axis = Axis::new(Direction::Vertical, (title, field));
 
         Ok(vec![display!(axis)])
     }

@@ -117,41 +117,51 @@ impl Widget_trait for Clone_progress_widget {
         title
             .style
             .set(theme.affect(render).await?.specific.text.subtitle);
-        let mut children: Vec<Widget> = vec![Anchor::left(title).any()];
+        let title_widget = Anchor::left(title);
 
-        match &*progress {
+        let content = match &*progress {
             Clone_progress::Starting => {
-                children.push(Anchor::left(Text::new("0%")).any());
-                children.push(Progress_bar::new(0.0).any());
+                Axis::new(
+                    Direction::Vertical,
+                    (title_widget, Anchor::left(Text::new("0%")), Progress_bar::new(0.0)),
+                )
             }
             Clone_progress::Running(rows) if rows.is_empty() => {
-                children.push(Anchor::left(Text::new("0%")).any());
-                children.push(Progress_bar::new(0.0).any());
+                Axis::new(
+                    Direction::Vertical,
+                    (title_widget, Anchor::left(Text::new("0%")), Progress_bar::new(0.0)),
+                )
             }
             Clone_progress::Running(rows) => {
+                let mut children: Vec<Widget> = vec![title_widget.as_any()];
                 for row in rows {
                     children.push(Anchor::left(Text::new(format!(
                         "{}: {}",
                         row.name, row.value
-                    ))).any());
+                    ))).as_any());
                     if let Some(fraction) = row.fraction {
-                        children.push(Progress_bar::new(fraction).any());
+                        children.push(Progress_bar::new(fraction).as_any());
                     }
                 }
+                Axis::new(Direction::Vertical, children)
             }
             Clone_progress::Complete => {
-                children.push(Progress_bar::new(1.0).any());
-                children.push(Anchor::left(Text::new("Clone complete")).any());
+                Axis::new(
+                    Direction::Vertical,
+                    (title_widget, Progress_bar::new(1.0), Anchor::left(Text::new("Clone complete"))),
+                )
             }
             Clone_progress::Failed(error) => {
-                children.push(Anchor::left(Text::new(format!(
-                    "Clone failed: {}",
-                    single_line(error)
-                ))).any());
+                Axis::new(
+                    Direction::Vertical,
+                    (title_widget, Anchor::left(Text::new(format!(
+                        "Clone failed: {}",
+                        single_line(error)
+                    )))),
+                )
             }
-        }
+        };
 
-        let content = Axis::new(Direction::Vertical, children);
         Ok(vec![display!(Paper::new(content))])
     }
 }
