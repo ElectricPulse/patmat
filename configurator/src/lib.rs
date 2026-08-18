@@ -167,10 +167,9 @@ impl Custom_widget_trait for Tree_menu_item {
         const INDENT: usize = 50;
         let theme = theme.affect(render).await?;
         let mut text = Text::new(&self.name);
-        text.style.set(match selected {
-            true => theme.specific.text.selected_subtitle,
-            false => theme.specific.text.subtitle,
-        });
+        let mut style = theme.specific.text.paragraph;
+        style.color = theme.semantic.text.muted;
+        text.style.set(style);
         let mut button = Button::around(text);
         button.highlighted = selected;
         let button = Space::left(button, (INDENT * self.depth) as f64, 1);
