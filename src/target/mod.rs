@@ -13,7 +13,7 @@ use std::{
 use crate::{target::status::Target_status, task::Task};
 use color_eyre::eyre::{Result, eyre};
 use vizual::{
-    state::{State, Store},
+    state::Store,
     sync::{Mutex, Thread_safe},
     widget::Widget,
 };
@@ -46,6 +46,8 @@ dyn_clone::clone_trait_object!(Target_trait);
 pub type Dependency = Box<dyn Target_trait>;
 pub type Dependencies = Vec<Dependency>;
 
+// Target should not be returned from helper functions
+// only the task
 #[derive(Clone)]
 pub struct Target<Output: Output_constraints> {
     metadata: Target_metadata,
@@ -65,25 +67,29 @@ impl<Output: Output_constraints> Target<Output> {
 
     pub fn new_independent(
         name: impl Into<String>,
-        path: Option<PathBuf>,
         task: Task<Output>,
     ) -> Self {
-        Self::new(name, path, task, Dependencies::new())
+        Self::new(name, task, Dependencies::new())
     }
 
     pub fn new(
         name: impl Into<String>,
-        path: Option<PathBuf>,
         task: Task<Output>,
         dependencies: Dependencies,
     ) -> Self {
         let metadata = Target_metadata {
             id: Store::new(NEXT_TARGET_ID.fetch_add(1, Ordering::Relaxed)),
             name: Store::new(name.into()),
-            path: Store::new(path),
+            path: Store::new(None),
             dependencies: Store::new(dependencies),
             status: Store::new(Target_status::Unsatisfied),
         };
+
+        let path_store = metadata.path.clone();
+        let task_clone = task.clone();
+        let _ = tokio::spawn(async move {
+            let _ = task_clone.init(path_store).await;
+        });
 
         Self {
             metadata,

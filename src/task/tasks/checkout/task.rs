@@ -1,7 +1,7 @@
 use crate::task::{self, tasks::terminal};
 
 use async_trait::async_trait;
-use color_eyre::eyre::{WrapErr, bail};
+use color_eyre::eyre::{Result, WrapErr, bail};
 use std::path::PathBuf;
 use tokio::process::Command;
 
@@ -22,6 +22,11 @@ impl Task {
 #[async_trait]
 impl task::Task_trait for Task {
     type Output = ();
+
+    async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
+        path.set(Some(self.repo_path.clone())).await?;
+        Ok(())
+    }
 
     async fn run(&self, widget: Store<Option<Widget>>) -> task::Task_result {
         // Check current branch silently

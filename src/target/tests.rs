@@ -12,9 +12,25 @@ impl Task_trait for Empty_task {
     }
 }
 
+struct Path_task(PathBuf);
+
+#[async_trait]
+impl Task_trait for Path_task {
+    type Output = ();
+
+    async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
+        path.set(Some(self.0.clone())).await?;
+        Ok(())
+    }
+
+    async fn run(&self, _widget: Store<Option<Widget>>) -> Task_result<Self::Output> {
+        Ok(((), Status::Built))
+    }
+}
+
 #[tokio::test]
 async fn metadata_clones_share_each_store() -> Result<()> {
-    let target = Target::new_independent("before", None, Task::new(Empty_task));
+    let target = Target::new_independent("before", Task::new(Empty_task));
     let metadata = target.get_metadata();
 
     metadata.name.set("after".to_owned()).await?;
@@ -25,6 +41,18 @@ async fn metadata_clones_share_each_store() -> Result<()> {
     assert_eq!(
         current.path.read().await?.as_deref(),
         Some(std::path::Path::new("updated"))
+    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn task_init_sets_target_path() -> Result<()> {
+    let target = Target::new_independent("with_path", Task::new(Path_task(PathBuf::from("/test/path"))));
+    tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+    let metadata = target.get_metadata();
+    assert_eq!(
+        metadata.path.read().await?.as_deref(),
+        Some(std::path::Path::new("/test/path"))
     );
     Ok(())
 }

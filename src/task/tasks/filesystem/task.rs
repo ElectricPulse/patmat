@@ -1,7 +1,7 @@
 use crate::task;
 
 use async_trait::async_trait;
-use color_eyre::eyre::WrapErr;
+use color_eyre::eyre::{Result, WrapErr};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -17,6 +17,12 @@ pub(super) struct Copy_file_task {
 #[async_trait]
 impl task::Task_trait for Copy_file_task {
     type Output = ();
+
+    async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
+        path.set(Some(self.destination.clone())).await?;
+        Ok(())
+    }
+
     async fn run(&self, _widget: Store<Option<Widget>>) -> task::Task_result {
         let _ = tokio::fs::copy(&self.source, &self.destination)
             .await
@@ -38,6 +44,12 @@ pub(super) struct Copy_dir_task {
 #[async_trait]
 impl task::Task_trait for Copy_dir_task {
     type Output = ();
+
+    async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
+        path.set(Some(self.destination.clone())).await?;
+        Ok(())
+    }
+
     async fn run(&self, _widget: Store<Option<Widget>>) -> task::Task_result {
         // Check if dest already exists
         if self.destination.exists()
@@ -78,6 +90,12 @@ pub(super) struct Create_dir_task {
 #[async_trait]
 impl task::Task_trait for Create_dir_task {
     type Output = ();
+
+    async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
+        path.set(Some(self.path.clone())).await?;
+        Ok(())
+    }
+
     async fn run(&self, _widget: Store<Option<Widget>>) -> task::Task_result {
         if self.path.exists() {
             return Ok(((), task::Status::Already_built));
@@ -100,6 +118,12 @@ pub(super) struct Write_file_task {
 #[async_trait]
 impl task::Task_trait for Write_file_task {
     type Output = ();
+
+    async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
+        path.set(Some(self.path.clone())).await?;
+        Ok(())
+    }
+
     async fn run(&self, _widget: Store<Option<Widget>>) -> task::Task_result {
         // Check if file exists with same content
         if self.path.exists()
@@ -133,6 +157,12 @@ pub(super) struct Create_directory_task {
 #[async_trait]
 impl task::Task_trait for Create_directory_task {
     type Output = PathBuf;
+
+    async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
+        path.set(Some(self.path.clone())).await?;
+        Ok(())
+    }
+
     async fn run(&self, _widget: Store<Option<Widget>>) -> task::Task_result<PathBuf> {
         if self.path.exists() {
             return Ok((self.path.clone(), task::Status::Already_built));

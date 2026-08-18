@@ -14,23 +14,11 @@ use serde::Serialize;
 use vizual_macros::display;
 
 use vizual::{
-    Vizual_command, Vizual_msg,
-    component::Children,
-    event::{Event, Key_event, Pointer_event},
-    geometry::Direction,
-    handlers::{Retrieve_handler, Submit_handler},
-    state::{State, State_trait},
-    sync::{Mutex, Thread_safe},
-    widget::{
-        Layout_input, Render_input, Widget, Widget_trait,
-        custom_widget::Custom_widget_trait,
-        widgets::{
-            button::Button,
-            layout::axis::Axis,
-            menu::{Menu, Menu_item},
-            paper::Paper,
-            positioning::{anchor::Anchor, space::Space},
-            text::Text,
+    Vizual_msg, component::Children, event::{Event, Key_event, Pointer_event}, geometry::Direction, handlers::{Retrieve_handler, Submit_handler}, state::{State, State_trait as _}, sync::{Mutex, Thread_safe}, widget::{
+        Layout_input, Render_input, Widget, Widget_trait, custom_widget::Custom_widget_trait, widgets::{
+            button::Button, layout::{axis::Axis, grid::Grid}, linebreak::Linebreak, menu::{Menu, Menu_item}, positioning::{
+                anchor::{Anchor, Anchors, Position}, space::Space,
+            }, text::Text, title_block::Title_block,
         },
     },
 };
@@ -50,9 +38,8 @@ pub trait Field<Value: Thread_safe>: Widget_trait + Retrieve_handler<Value> {}
 
 dyn_clone::clone_trait_object!(<Value> Field<Value> where Value: Thread_safe);
 
-impl<T, Value: Thread_safe> Field<Value> for T
-where
-    T: Widget_trait + Retrieve_handler<Value> + Clone + 'static,
+impl<T, Value: Thread_safe> Field<Value> for T where
+    T: Widget_trait + Retrieve_handler<Value> + Clone + 'static
 {
 }
 
@@ -129,12 +116,14 @@ impl Configuration_tree_branch {
     }
 }
 
+/// A single editable configuration field.
 pub struct Configuration_tree_leaf {
     pub widget: Widget,
-    pub name: String,
     pub description: String,
+    pub name: String,
 }
 
+/// A branch or editable leaf in a configuration tree.
 pub enum Configuration_tree {
     Branch(Configuration_tree_branch),
     Leaf(Configuration_tree_leaf),
@@ -234,7 +223,10 @@ impl<Tree: crate::Tree> Submit_handler<bool> for Configurator<Tree> {
         let string =
             serde_saphyr::to_string(&config).wrap_err("Failed to serialize configuration")?;
         fs::write(&self.configuration_path, string).wrap_err("Failed to save configuration")?;
-        println!("Configuration saved to {}", self.configuration_path.display());
+        println!(
+            "Configuration saved to {}",
+            self.configuration_path.display()
+        );
 
         if let Some(submit_handler) = &mut self.submit_handler {
             return submit_handler.on_submit(config).await;
@@ -297,30 +289,52 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
                 let description = Text::new(leaf.description);
                 let description = Anchor::left(description);
 
-                let axis = Axis::new(Direction::Vertical, (description, leaf.widget));
-                let axis = Paper::new(axis);
-                let axis = Anchor::middle(axis);
-                Some(axis.as_any())
+                let axis = Axis::new(
+                    Direction::Vertical,
+                    (
+                        description,
+                        Linebreak::new(Direction::Horizontal),
+                        leaf.widget,
+                    ),
+                );
+
+                let leaf = Title_block::new(axis, leaf.name);
+
+                Some(leaf.as_any())
             } else {
                 None
             }
         };
 
-        let tree = Anchor::left(self.menu.clone());
-        let tree = Paper::new(tree);
+        let theme = theme.affect(render).await?;
+        let gap = theme.semantic.axis.gap;
+        let menu = Title_block::new(self.menu.clone(), "Config");
+        let menu = Anchor::top_left(menu);
 
-        let submit_button = Button::new(Text::new("Apply"), self.clone());
-        let submit_button = Anchor::left(submit_button);
-        let submit_button = Paper::new(submit_button);
+        let mut text = Text::new("Apply");
+        text.style.set(theme.specific.text.selected_subtitle);
+        let button = Button::new(text, self.clone());
+        let button = Anchor::new(
+            button,
+            Anchors {
+                horizontal: Some(Position::End),
+                vertical: Some(Position::End),
+            },
+        );
 
-        let left_axis = Axis::new(Direction::Vertical, (tree, submit_button));
-        let left_axis = Anchor::middle(left_axis);
-
-        let final_axis: Widget = match field {
-            Some(field) => Axis::new(Direction::Horizontal, (left_axis, field)).as_any(),
-            None => left_axis.as_any(),
+        let grid = if let Some(field) = field {
+            let field = Anchor::new(
+                field,
+                Anchors {
+                    horizontal: Some(Position::End),
+                    vertical: Some(Position::Start),
+                },
+            );
+            Grid::new((menu, field, button), gap)
+        } else {
+            Grid::new((menu, button), gap)
         };
 
-        Ok(vec![display!(final_axis)])
+        Ok(vec![display!(grid)])
     }
 }

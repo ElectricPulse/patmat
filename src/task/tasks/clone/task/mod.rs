@@ -41,6 +41,11 @@ impl Task {
 impl task::Task_trait for Task {
     type Output = ();
 
+    async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
+        path.set(Some(self.path.clone())).await?;
+        Ok(())
+    }
+
     async fn run(&self, widget: Store<Option<Widget>>) -> task::Task_result {
         widget.set(Some(Anchor::middle(self.widget()).as_any())).await?;
 

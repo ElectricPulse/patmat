@@ -5,6 +5,7 @@ use vizual::{
 };
 
 use async_trait::async_trait;
+use color_eyre::Result;
 use std::path::PathBuf;
 
 #[derive(Clone)]
@@ -59,6 +60,13 @@ impl Task {
 #[async_trait]
 impl task::Task_trait for Task {
     type Output = ();
+
+    async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
+        if let Some(dir) = &self.working_dir {
+            path.set(Some(dir.clone())).await?;
+        }
+        Ok(())
+    }
 
     async fn run(&self, widget: Store<Option<Widget>>) -> task::Task_result {
         widget.set(Some(self.terminal.clone().as_any())).await?;
