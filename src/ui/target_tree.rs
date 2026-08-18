@@ -3,14 +3,12 @@ use color_eyre::Result;
 use derive_new::new;
 use std::path::PathBuf;
 use vizual::{
-    component::{Children, context::Component_context},
+    component::Children,
     geometry::Direction,
     handlers::Retrieve_handler,
-    layouter::hitbox::Hitbox,
-    slot::manager::Slots,
     state::{State, Store},
     widget::{
-        Focus_provider, Layout_input, Widget, Widget_trait,
+        Layout_input, Widget, Widget_trait,
         custom_widget::Custom_widget_trait,
         widgets::{
             icon::Icon,

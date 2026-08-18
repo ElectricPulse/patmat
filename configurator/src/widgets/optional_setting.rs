@@ -4,15 +4,12 @@ use derive_where::derive_where;
 use std::marker::PhantomData;
 use vizual::geometry::Direction;
 use vizual::{
-    component::{Children, context::Component_context},
+    component::Children,
     handlers::Retrieve_handler,
-    layouter::hitbox::Hitbox,
-    slot::manager::Slots,
-    state::{State, Store},
+    state::State,
     sync::Thread_safe,
-    theme::Theme,
     widget::{
-        Focus_provider, Layout_input, Shared_widget, Widget, Widget_trait,
+        Layout_input, Shared_widget, Widget, Widget_trait,
         custom_widget::Custom_widget_trait,
         widgets::{
             layout::axis::Axis,

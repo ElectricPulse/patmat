@@ -14,18 +14,16 @@ use crate::{
 };
 use vizual::{
     self,
-    component::{Children, context::Component_context},
+    component::Children,
     geometry::Direction,
-    layouter::hitbox::Hitbox,
-    slot::manager::Slots,
     state::{State, Store},
     widget::{
-        Focus_provider, Layout_input, Shared_widget, Widget, Widget_trait,
+        Layout_input, Shared_widget, Widget, Widget_trait,
         widgets::{
             layout::axis::Axis,
             linebreak::Linebreak,
             paragraph::Paragraph,
-            positioning::anchor::{Anchor, Anchors, Position},
+            positioning::anchor::Anchor,
             scroll::Scroll,
             text::Text,
         },
