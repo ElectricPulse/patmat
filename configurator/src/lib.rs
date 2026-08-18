@@ -311,7 +311,7 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
         let menu = Anchor::top_left(menu);
 
         let mut text = Text::new("Apply");
-        text.style.set(theme.specific.text.selected_subtitle);
+        text.style.set(theme.specific.text.button);
         let button = Button::new(text, self.clone());
         let button = Anchor::new(
             button,
