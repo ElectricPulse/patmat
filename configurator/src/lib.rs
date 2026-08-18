@@ -49,7 +49,7 @@ use vizual_macros::display;
 #[async_trait]
 /// Supplies the fields displayed by a [`Configurator`].
 pub trait Tree: Thread_safe {
-    type Configuration: Serialize;
+    type Configuration: Serialize + Thread_safe + Clone;
 
     fn get_tree(&self) -> Configuration_tree_branch;
     async fn create_config(&mut self) -> Result<Self::Configuration>;
@@ -230,70 +230,37 @@ fn collect_menu_items(
     }
 }
 
-#[derive_where(Clone)]
-pub struct Config_manager<T: Tree> {
-    tree: Arc<Mutex<T>>,
-    configuration_path: PathBuf,
-    submit_handler: Box<dyn Submit_handler<bool>>,
-}
-
-#[derive_where(Clone)]
-struct Config_manager_handle<T: Tree> {
-    manager: Arc<Mutex<Config_manager<T>>>,
-}
-
 /// A widget editor for a [`Tree`].
 #[derive_where(Clone)]
-pub struct Configurator<T: Tree> {
-    tree: Arc<Mutex<T>>,
+pub struct Configurator<Tree: Tree> {
+    tree: Arc<Mutex<Tree>>,
     menu: Shared_widget<Menu<Vec<String>>>,
-    config_manager: Config_manager_handle<T>,
     submit: Shared_widget<Popup>,
+    submit_handler: Box<dyn Submit_handler<Tree::Configuration>>,
     submitting: bool,
-    popup_slot: Component_slot,
+    configuration_path: PathBuf,
 }
 
-impl<T: Tree> Config_manager<T> {
-    async fn save(&mut self) -> Result<()> {
+#[async_trait]
+impl<Tree: Tree> Submit_handler<bool> for Configurator<Tree> {
+    async fn on_submit(&mut self, _focused: bool) -> Result<Vizual_msg> {
         let config = self.tree.lock().await?.create_config().await?;
         let string =
             serde_saphyr::to_string(&config).wrap_err("Failed to serialize configuration")?;
         fs::write(&self.configuration_path, string).wrap_err("Failed to save configuration")?;
-        Ok(())
-    }
 
-    async fn complete(&mut self, should_save: bool) -> Result<Vizual_msg> {
-        self.submit_handler.on_submit(should_save).await
-    }
-}
+        self.submit_handler.on_submit(config).await;
 
-#[async_trait]
-impl<T: Tree> Submit_handler<bool> for Config_manager_handle<T> {
-    async fn on_submit(&mut self, should_save: bool) -> Result<Vizual_msg> {
-        let mut manager = self.manager.lock().await?;
-
-        if should_save {
-            manager.save().await?;
-        }
-
-        manager.complete(should_save).await
-    }
-}
-
-#[async_trait]
-impl<T: Tree> Submit_handler<String> for Config_manager_handle<T> {
-    async fn on_submit(&mut self, _label: String) -> Result<Vizual_msg> {
-        self.manager.lock().await?.save().await?;
-        Vizual_msg::new(Vizual_command::Layout)
+        Vizual_msg::none()
     }
 }
 
 /// Creates a configurator that optionally saves YAML to `configuration_path`.
-pub async fn configurator<T: Tree>(
+pub async fn new<Tree: Tree>(
     configuration_path: impl AsRef<Path>,
-    tree: T,
-    submit_handler: impl Submit_handler<bool>,
-) -> Result<Configurator<T>> {
+    tree: Tree,
+    submit_handler: impl Submit_handler<Tree::Configuration>,
+) -> Result<Configurator<Tree>> {
     let tree_branch = tree.get_tree();
     let mut items = Vec::new();
     collect_menu_items(&tree_branch, &[], &mut items);
@@ -307,26 +274,18 @@ pub async fn configurator<T: Tree>(
     let menu = menu.into_shared();
     let tree = Arc::new(Mutex::new(tree));
 
-    let config_manager = Config_manager_handle {
-        manager: Arc::new(Mutex::new(Config_manager {
-            tree: tree.clone(),
-            configuration_path: configuration_path.as_ref().to_owned(),
-            submit_handler: Box::new(submit_handler) as Box<dyn Submit_handler<bool>>,
-        })),
-    };
-
     Ok(Configurator {
         tree,
         menu,
-        config_manager: config_manager.clone(),
+        configuration_path: configuration_path.as_ref().to_owned(),
+        submit_handler: Box::new(submit_handler),
         submit: Popup::new(config_manager).await?.into_shared(),
         submitting: false,
-        popup_slot: Component_slot::new(),
     })
 }
 
 #[async_trait]
-impl<T: Tree> Widget_trait for Configurator<T> {
+impl<Tree: Tree> Widget_trait for Configurator<Tree> {
     async fn layout(
         &mut self,
         Layout_input {
@@ -413,10 +372,7 @@ impl<T: Tree> Widget_trait for Configurator<T> {
         let grid = Grid::new(children, gap);
 
         if self.submitting {
-            let popup = self
-                .popup_slot
-                .set_child(self.submit.clone(), problem.clone(), hitbox)
-                .await?;
+            let popup = display!(self.submit.clone());
 
             popup.lock().await?.logical = true;
             root.lock().await?.children.push(popup.clone());
@@ -431,7 +387,7 @@ impl<T: Tree> Widget_trait for Configurator<T> {
             if !self.submitting {
                 self.submitting = true;
 
-                return Vizual_msg::new(Vizual_command::Focus(self.popup_slot.get_reference()));
+                return Vizual_msg::none();
             }
 
             return Vizual_msg::none();
