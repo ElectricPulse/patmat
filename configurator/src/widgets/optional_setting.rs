@@ -63,7 +63,7 @@ impl<Value: Thread_safe> Custom_widget_trait for Default_leaf_value<Value> {
 
 #[derive_where(Clone)]
 struct Custom_leaf_value<Value: Thread_safe> {
-    field: Shared_widget<Box<dyn Field<Value>>>,
+    field: Box<dyn Field<Value>>,
 }
 
 #[async_trait]
@@ -71,8 +71,6 @@ impl<Value: Thread_safe> Retrieve_handler<Option<Value>> for Custom_leaf_value<V
     async fn on_retrieve(&mut self) -> Result<Option<Value>> {
         let value = self
             .field
-            .lock()
-            .await?
             .on_retrieve()
             .await?
             .ok_or_else(|| eyre!("Expected to get value from custom field"))?;
@@ -119,7 +117,7 @@ impl<Value: Thread_safe> Custom_widget_trait for Custom_leaf_value<Value> {
 pub struct Optional_setting<Value: Clone + Thread_safe> {
     default_value: String,
     is_default: bool,
-    field: Shared_widget<Box<dyn Field<Value>>>,
+    field: Box<dyn Field<Value>>,
     menu: Option<Shared_widget<Menu<Option<Value>>>>,
 }
 
@@ -129,11 +127,10 @@ impl<Value: Clone + Thread_safe> Optional_setting<Value> {
         is_default: bool,
         field: impl Field<Value> + 'static,
     ) -> Self {
-        let field = Widget_trait::into_shared(Box::new(field) as Box<dyn Field<Value>>);
         Self {
             default_value: default_value.into(),
             is_default,
-            field,
+            field: Box::new(field),
             menu: None,
         }
     }

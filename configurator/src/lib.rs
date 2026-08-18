@@ -90,6 +90,15 @@ impl<Value: 'static> Widget_trait for Box<dyn Field<Value>> {
     }
 }
 
+#[async_trait]
+impl<Value: 'static> Retrieve_handler<Option<Value>> for Box<dyn Field<Value>> {
+    async fn on_retrieve(&mut self) -> Result<Option<Value>> {
+        (**self).on_retrieve().await
+    }
+}
+
+impl<Value: 'static> Field<Value> for Box<dyn Field<Value>> {}
+
 /// An ordered group of configuration nodes.
 pub struct Configuration_tree_branch(pub IndexMap<String, Configuration_tree>);
 
