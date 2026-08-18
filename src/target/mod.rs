@@ -125,8 +125,9 @@ impl<Output: Output_constraints> Target<Output> {
 
         let (output, status) = match result {
             Err(err) => {
+                let error_message = format!("{err:#}");
                 self.set_status(Target_status::Error(Arc::new(err))).await?;
-                return Err(eyre!("Task failed"));
+                return Err(eyre!("{error_message}"));
             }
             Ok(result) => result,
         };
