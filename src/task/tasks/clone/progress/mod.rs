@@ -4,7 +4,7 @@ use std::sync::{Arc, atomic::Ordering};
 use vizual::{
     component::Children,
     geometry::{Direction, Rect},
-    state::{State, Store},
+    state::Store,
     widget::{
         Layout_input, Render_input, Widget, Widget_trait,
         widgets::{layout::axis::Axis, paper::Paper, positioning::anchor::Anchor, text::Text},

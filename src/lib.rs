@@ -16,7 +16,7 @@ use vizual::{
     self,
     component::Children,
     geometry::Direction,
-    state::{State, Store},
+    state::Store,
     widget::{
         Layout_input, Shared_widget, Widget_trait,
         widgets::{

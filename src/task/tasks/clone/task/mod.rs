@@ -9,7 +9,7 @@ use std::{
     time::Duration,
 };
 use vizual::{
-    state::{State, Store},
+    state::Store,
     widget::{Widget, Widget_trait, widgets::positioning::anchor::Anchor},
 };
 

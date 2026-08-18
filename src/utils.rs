@@ -1,7 +1,7 @@
 use crate::target::{Dependencies, Dependency};
 use color_eyre::eyre::Result;
 use std::{collections::HashSet, path::Path};
-use vizual::{Render, state::State};
+use vizual::Render;
 
 pub(crate) fn display_target_path(path: &Path, working_directory: &Path) -> String {
     let path = path.strip_prefix(working_directory).unwrap_or(path);

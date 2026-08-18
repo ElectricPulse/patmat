@@ -14,7 +14,7 @@ use serde::Serialize;
 use vizual_macros::display;
 
 use vizual::{
-    Vizual_msg, component::Children, event::{Event, Key_event, Pointer_event}, geometry::Direction, handlers::{Retrieve_handler, Submit_handler}, state::{State, State_trait as _}, sync::{Mutex, Thread_safe}, widget::{
+    Vizual_msg, component::Children, event::{Event, Key_event, Pointer_event}, geometry::Direction, handlers::{Retrieve_handler, Submit_handler}, state::State, sync::{Mutex, Thread_safe}, widget::{
         Layout_input, Render_input, Widget, Widget_trait, custom_widget::Custom_widget_trait, widgets::{
             button::Button, layout::{axis::Axis, grid::Grid}, linebreak::Linebreak, menu::{Menu, Menu_item}, positioning::{
                 anchor::{Anchor, Anchors, Anchor_position}, space::Space,
