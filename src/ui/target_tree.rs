@@ -64,7 +64,7 @@ impl Custom_widget_trait for Target_tree_item {
         );
 
         let mut name = Text::new(metadata.name);
-        let mut name_style = theme.specific.text.button;
+        let mut name_style = theme.specific.text.paragraph;
         if !selected {
             name_style.color = theme.semantic.text.muted;
         }
@@ -75,7 +75,11 @@ impl Custom_widget_trait for Target_tree_item {
         let details = match path {
             Some(path) => {
                 let path = display_target_path(&path, &self.working_directory);
-                let path = Anchor::left(Text::new(format!("- {path}")));
+                let mut path_text = Text::new(format!("- {path}"));
+                let mut path_style = theme.specific.text.paragraph;
+                path_style.color = theme.semantic.text.muted;
+                path_text.style.set(path_style);
+                let path = Anchor::left(path_text);
                 Axis::new(Direction::Vertical, (name, path))
             }
             None => Axis::new(Direction::Vertical, (name,)),
