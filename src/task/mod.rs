@@ -5,6 +5,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use vizual::{
+    state::Store,
     sync::Mutex,
     widget::Widget,
 };
@@ -20,7 +21,7 @@ pub type Task_result<Output = ()> = Result<(Output, Status)>;
 #[async_trait]
 pub trait Task_trait: Send + Sync {
     type Output: Send;
-    async fn run(&self, widget: Arc<Mutex<Option<Widget>>>) -> Task_result<Self::Output>;
+    async fn run(&self, widget: Store<Option<Widget>>) -> Task_result<Self::Output>;
 }
 
 #[derive(Clone)]

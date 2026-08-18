@@ -5,8 +5,7 @@ use color_eyre::eyre::{WrapErr, bail};
 use std::path::PathBuf;
 use tokio::process::Command;
 
-use std::sync::Arc;
-use vizual::{sync::Mutex, widget::Widget};
+use vizual::{state::Store, widget::Widget};
 
 #[derive(Clone)]
 pub(super) struct Task {
@@ -24,7 +23,7 @@ impl Task {
 impl task::Task_trait for Task {
     type Output = ();
 
-    async fn run(&self, widget: Arc<Mutex<Option<Widget>>>) -> task::Task_result {
+    async fn run(&self, widget: Store<Option<Widget>>) -> task::Task_result {
         // Check current branch silently
         let output = Command::new("git")
             .arg("branch")

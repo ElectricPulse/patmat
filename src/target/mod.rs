@@ -37,7 +37,7 @@ pub struct Target_metadata {
 // Since Targets are clonable and aren't in an Arc, Target trait should also be clonable
 pub trait Target_trait: DynClone + Send + Sync {
     fn get_metadata(&self) -> Target_metadata;
-    fn widget(&self) -> Arc<Mutex<Option<Widget>>>;
+    fn widget(&self) -> Store<Option<Widget>>;
     async fn ensure_ran(&self) -> Result<()>;
 }
 
@@ -50,7 +50,7 @@ pub type Dependencies = Vec<Dependency>;
 pub struct Target<Output: Output_constraints> {
     metadata: Target_metadata,
     task: Task<Output>,
-    widget: Arc<Mutex<Option<Widget>>>,
+    widget: Store<Option<Widget>>,
     output: Arc<Mutex<Option<Output>>>,
 }
 
@@ -59,7 +59,7 @@ impl<Output: Output_constraints> Target<Output> {
         self.metadata.clone()
     }
 
-    pub fn widget(&self) -> Arc<Mutex<Option<Widget>>> {
+    pub fn widget(&self) -> Store<Option<Widget>> {
         self.widget.clone()
     }
 
@@ -88,7 +88,7 @@ impl<Output: Output_constraints> Target<Output> {
         Self {
             metadata,
             task,
-            widget: Arc::new(Mutex::new(None)),
+            widget: Store::new(None),
             output: Arc::new(Mutex::new(None)),
         }
     }
@@ -149,7 +149,7 @@ impl<Output: Output_constraints> Target_trait for Target<Output> {
         self.metadata.clone()
     }
 
-    fn widget(&self) -> Arc<Mutex<Option<Widget>>> {
+    fn widget(&self) -> Store<Option<Widget>> {
         self.widget.clone()
     }
 

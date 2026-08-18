@@ -94,7 +94,7 @@ impl Widget_trait for Builder {
         let status = metadata.status.affect(render.clone()).await?.clone();
         let status_label = status.label();
 
-        let theme = theme.affect(render).await?;
+        let theme = theme.affect(render.clone()).await?;
         let mut name = Paragraph::new(Direction::Horizontal, theme.units.em * 15.0);
         name.set_styled_content(name_content, theme.specific.text.title);
 
@@ -113,7 +113,7 @@ impl Widget_trait for Builder {
 
         let metadata = Axis::new(Direction::Vertical, metadata_items);
 
-        let widget = dependency.widget().lock().await?.clone();
+        let widget = dependency.widget().affect(render.clone()).await?.clone();
         let panel: Vec<Widget> = if let Some(widget) = widget {
             vec![
                 metadata.any(),

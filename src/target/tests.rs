@@ -7,7 +7,7 @@ struct Empty_task;
 impl Task_trait for Empty_task {
     type Output = ();
 
-    async fn run(&self, _widget: Arc<Mutex<Option<Widget>>>) -> Task_result<Self::Output> {
+    async fn run(&self, _widget: Store<Option<Widget>>) -> Task_result<Self::Output> {
         Ok(((), Status::Built))
     }
 }

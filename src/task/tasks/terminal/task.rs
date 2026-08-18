@@ -1,7 +1,6 @@
 use crate::task;
-use std::sync::Arc;
 use vizual::{
-    sync::Mutex,
+    state::Store,
     widget::{Widget, Widget_trait, widgets::terminal::Terminal},
 };
 
@@ -61,8 +60,8 @@ impl Task {
 impl task::Task_trait for Task {
     type Output = ();
 
-    async fn run(&self, widget: Arc<Mutex<Option<Widget>>>) -> task::Task_result {
-        *widget.lock().await? = Some(self.terminal.clone().any());
+    async fn run(&self, widget: Store<Option<Widget>>) -> task::Task_result {
+        *widget.write().await? = Some(self.terminal.clone().any());
 
         let handle = match &self.working_dir {
             Some(working_dir) => self.terminal.run_in_dir(&self.command, working_dir),

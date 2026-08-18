@@ -10,7 +10,6 @@ use std::{
 };
 use vizual::{
     state::{State, Store},
-    sync::Mutex,
     widget::{Widget, Widget_trait, widgets::positioning::anchor::Anchor},
 };
 
@@ -42,8 +41,8 @@ impl Task {
 impl task::Task_trait for Task {
     type Output = ();
 
-    async fn run(&self, widget: Arc<Mutex<Option<Widget>>>) -> task::Task_result {
-        *widget.lock().await? = Some(Anchor::middle(self.widget()).any());
+    async fn run(&self, widget: Store<Option<Widget>>) -> task::Task_result {
+        *widget.write().await? = Some(Anchor::middle(self.widget()).any());
 
         let git_dir = self.path.join(".git");
 
