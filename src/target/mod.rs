@@ -37,7 +37,7 @@ pub struct Target_metadata {
 // Since Targets are clonable and aren't in an Arc, Target trait should also be clonable
 pub trait Target_trait: DynClone + Send + Sync {
     fn get_metadata(&self) -> Target_metadata;
-    fn widget(&self) -> Option<Widget>;
+    fn widget(&self) -> Arc<Mutex<Option<Widget>>>;
     async fn ensure_ran(&self) -> Result<()>;
 }
 
@@ -50,12 +50,17 @@ pub type Dependencies = Vec<Dependency>;
 pub struct Target<Output: Output_constraints> {
     metadata: Target_metadata,
     task: Task<Output>,
+    widget: Arc<Mutex<Option<Widget>>>,
     output: Arc<Mutex<Option<Output>>>,
 }
 
 impl<Output: Output_constraints> Target<Output> {
     pub fn get_metadata(&self) -> Target_metadata {
         self.metadata.clone()
+    }
+
+    pub fn widget(&self) -> Arc<Mutex<Option<Widget>>> {
+        self.widget.clone()
     }
 
     pub fn new_independent(
@@ -83,6 +88,7 @@ impl<Output: Output_constraints> Target<Output> {
         Self {
             metadata,
             task,
+            widget: Arc::new(Mutex::new(None)),
             output: Arc::new(Mutex::new(None)),
         }
     }
@@ -103,7 +109,13 @@ impl<Output: Output_constraints> Target<Output> {
 
         self.set_status(Target_status::Running).await?;
 
-        let result = self.task.task.lock().await?.run().await;
+        let result = self
+            .task
+            .task
+            .lock()
+            .await?
+            .run(self.widget.clone())
+            .await;
 
         let (output, status) = match result {
             Err(err) => {
@@ -137,8 +149,8 @@ impl<Output: Output_constraints> Target_trait for Target<Output> {
         self.metadata.clone()
     }
 
-    fn widget(&self) -> Option<Widget> {
-        self.task.widget.clone()
+    fn widget(&self) -> Arc<Mutex<Option<Widget>>> {
+        self.widget.clone()
     }
 
     async fn ensure_ran(&self) -> Result<()> {

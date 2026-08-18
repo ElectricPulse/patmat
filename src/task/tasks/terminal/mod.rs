@@ -1,7 +1,7 @@
 pub mod task;
 
 use std::path::PathBuf;
-use vizual::widget::{Widget_trait, widgets::terminal::Terminal};
+use vizual::widget::widgets::terminal::Terminal;
 
 use crate::task::Task;
 
@@ -26,6 +26,5 @@ pub fn with_terminal_in_dir(
 }
 
 fn build(task: task::Task) -> Task<()> {
-    let widget = task.widget();
-    Task::new(task, Some(widget.any()))
+    Task::new(task)
 }

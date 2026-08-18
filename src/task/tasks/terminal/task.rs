@@ -1,5 +1,9 @@
 use crate::task;
-use vizual::widget::widgets::terminal::Terminal;
+use std::sync::Arc;
+use vizual::{
+    sync::Mutex,
+    widget::{Widget, Widget_trait, widgets::terminal::Terminal},
+};
 
 use async_trait::async_trait;
 use std::path::PathBuf;
@@ -57,7 +61,9 @@ impl Task {
 impl task::Task_trait for Task {
     type Output = ();
 
-    async fn run(&self) -> task::Task_result {
+    async fn run(&self, widget: Arc<Mutex<Option<Widget>>>) -> task::Task_result {
+        *widget.lock().await? = Some(self.terminal.clone().any());
+
         let handle = match &self.working_dir {
             Some(working_dir) => self.terminal.run_in_dir(&self.command, working_dir),
             None => self.terminal.run(&self.command),

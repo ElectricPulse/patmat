@@ -8,7 +8,11 @@ use std::{
     sync::{Arc, atomic::AtomicBool},
     time::Duration,
 };
-use vizual::state::{State, Store};
+use vizual::{
+    state::{State, Store},
+    sync::Mutex,
+    widget::{Widget, Widget_trait, widgets::positioning::anchor::Anchor},
+};
 
 #[cfg(test)]
 mod tests;
@@ -38,7 +42,9 @@ impl Task {
 impl task::Task_trait for Task {
     type Output = ();
 
-    async fn run(&self) -> task::Task_result {
+    async fn run(&self, widget: Arc<Mutex<Option<Widget>>>) -> task::Task_result {
+        *widget.lock().await? = Some(Anchor::middle(self.widget()).any());
+
         let git_dir = self.path.join(".git");
 
         let git_directory_exists = git_dir

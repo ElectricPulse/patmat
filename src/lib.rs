@@ -113,7 +113,8 @@ impl Widget_trait for Builder {
 
         let metadata = Axis::new(Direction::Vertical, metadata_items);
 
-        let panel: Vec<Widget> = if let Some(widget) = dependency.widget() {
+        let widget = dependency.widget().lock().await?.clone();
+        let panel: Vec<Widget> = if let Some(widget) = widget {
             vec![
                 metadata.any(),
                 Linebreak::new(Direction::Horizontal).any(),

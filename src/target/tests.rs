@@ -7,14 +7,14 @@ struct Empty_task;
 impl Task_trait for Empty_task {
     type Output = ();
 
-    async fn run(&self) -> Task_result<Self::Output> {
+    async fn run(&self, _widget: Arc<Mutex<Option<Widget>>>) -> Task_result<Self::Output> {
         Ok(((), Status::Built))
     }
 }
 
 #[tokio::test]
 async fn metadata_clones_share_each_store() -> Result<()> {
-    let target = Target::new_independent("before", None, Task::new(Empty_task, None));
+    let target = Target::new_independent("before", None, Task::new(Empty_task));
     let metadata = target.get_metadata();
 
     *metadata.name.write().await? = "after".to_owned();
