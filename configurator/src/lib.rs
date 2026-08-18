@@ -17,7 +17,7 @@ use vizual::{
     Vizual_msg, component::Children, event::{Event, Key_event, Pointer_event}, geometry::Direction, handlers::{Retrieve_handler, Submit_handler}, state::{State, State_trait as _}, sync::{Mutex, Thread_safe}, widget::{
         Layout_input, Render_input, Widget, Widget_trait, custom_widget::Custom_widget_trait, widgets::{
             button::Button, layout::{axis::Axis, grid::Grid}, linebreak::Linebreak, menu::{Menu, Menu_item}, positioning::{
-                anchor::{Anchor, Anchors, Position}, space::Space,
+                anchor::{Anchor, Anchors, Anchor_position}, space::Space,
             }, text::Text, title_block::Title_block,
         },
     },
@@ -317,8 +317,8 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
         let button = Anchor::new(
             button,
             Anchors {
-                horizontal: Some(Position::End),
-                vertical: Some(Position::End),
+                horizontal: Some(Anchor_position::End),
+                vertical: Some(Anchor_position::End),
             },
         );
 
@@ -326,8 +326,8 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
             let field = Anchor::new(
                 field,
                 Anchors {
-                    horizontal: Some(Position::End),
-                    vertical: Some(Position::Start),
+                    horizontal: Some(Anchor_position::End),
+                    vertical: Some(Anchor_position::Start),
                 },
             );
             Grid::new((menu, field, button), gap)

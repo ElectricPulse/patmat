@@ -14,7 +14,7 @@ use vizual::{
             icon::Icon,
             layout::axis::Axis,
             menu::{Menu, Menu_item},
-            positioning::anchor::{Anchor, Anchors, Position},
+            positioning::anchor::{Anchor, Anchors, Anchor_position},
             text::Text,
         },
     },
@@ -56,7 +56,7 @@ impl Custom_widget_trait for Target_tree_item {
         let icon = Anchor::new(
             icon,
             Anchors {
-                vertical: Some(Position::Middle),
+                vertical: Some(Anchor_position::Middle),
                 horizontal: None,
             },
         );
