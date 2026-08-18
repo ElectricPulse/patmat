@@ -18,12 +18,11 @@ use derive_where::derive_where;
 use indexmap::IndexMap;
 use serde::Serialize;
 use vizual::{
-    Vizual_command, Vizual_msg, check_quit_event,
+    Vizual_msg,
     component::Children,
     event::{Event, Key_event, Pointer_event},
     geometry::Direction,
     handlers::{Retrieve_handler, Submit_handler},
-    slot::Component_slot,
     state::State,
     sync::{Mutex, Thread_safe},
     widget::{
@@ -34,7 +33,6 @@ use vizual::{
             layout::{axis::Axis, grid::Grid},
             linebreak::Linebreak,
             menu::{Menu, Menu_item},
-            popup::Popup,
             positioning::{
                 anchor::{Anchor, Anchors, Position as Anchor_position},
                 space::Space,
@@ -232,34 +230,34 @@ fn collect_menu_items(
 
 /// A widget editor for a [`Tree`].
 #[derive_where(Clone)]
-pub struct Configurator<Tree: Tree> {
+pub struct Configurator<Tree: crate::Tree> {
     tree: Arc<Mutex<Tree>>,
     menu: Shared_widget<Menu<Vec<String>>>,
-    submit: Shared_widget<Popup>,
-    submit_handler: Box<dyn Submit_handler<Tree::Configuration>>,
-    submitting: bool,
+    submit_handler: Option<Box<dyn Submit_handler<Tree::Configuration>>>,
     configuration_path: PathBuf,
 }
 
 #[async_trait]
-impl<Tree: Tree> Submit_handler<bool> for Configurator<Tree> {
+impl<Tree: crate::Tree> Submit_handler<bool> for Configurator<Tree> {
     async fn on_submit(&mut self, _focused: bool) -> Result<Vizual_msg> {
         let config = self.tree.lock().await?.create_config().await?;
         let string =
             serde_saphyr::to_string(&config).wrap_err("Failed to serialize configuration")?;
         fs::write(&self.configuration_path, string).wrap_err("Failed to save configuration")?;
 
-        self.submit_handler.on_submit(config).await;
+        if let Some(submit_handler) = &mut self.submit_handler {
+            return submit_handler.on_submit(config).await;
+        }
 
         Vizual_msg::none()
     }
 }
 
 /// Creates a configurator that optionally saves YAML to `configuration_path`.
-pub async fn new<Tree: Tree>(
+pub async fn new<Tree: crate::Tree>(
     configuration_path: impl AsRef<Path>,
     tree: Tree,
-    submit_handler: impl Submit_handler<Tree::Configuration>,
+    submit_handler: Option<impl Submit_handler<Tree::Configuration>>,
 ) -> Result<Configurator<Tree>> {
     let tree_branch = tree.get_tree();
     let mut items = Vec::new();
@@ -278,23 +276,19 @@ pub async fn new<Tree: Tree>(
         tree,
         menu,
         configuration_path: configuration_path.as_ref().to_owned(),
-        submit_handler: Box::new(submit_handler),
-        submit: Popup::new(config_manager).await?.into_shared(),
-        submitting: false,
+        submit_handler: submit_handler
+            .map(|handler| Box::new(handler) as Box<dyn Submit_handler<Tree::Configuration>>),
     })
 }
 
 #[async_trait]
-impl<Tree: Tree> Widget_trait for Configurator<Tree> {
+impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
     async fn layout(
         &mut self,
         Layout_input {
             render,
             theme,
-            hitbox,
-            problem,
             slots,
-            root,
             ..
         }: Layout_input<'_>,
     ) -> Result<Children> {
@@ -358,7 +352,7 @@ impl<Tree: Tree> Widget_trait for Configurator<Tree> {
 
         let mut text = Text::new("Apply");
         text.style.set(theme.specific.text.selected_subtitle);
-        let button = Button::new(text, self.config_manager.clone());
+        let button = Button::new(text, self.clone());
         let button = Anchor::new(
             button,
             Anchors {
@@ -371,28 +365,6 @@ impl<Tree: Tree> Widget_trait for Configurator<Tree> {
 
         let grid = Grid::new(children, gap);
 
-        if self.submitting {
-            let popup = display!(self.submit.clone());
-
-            popup.lock().await?.logical = true;
-            root.lock().await?.children.push(popup.clone());
-            return Ok(vec![display!(grid), popup]);
-        }
-
         Ok(vec![display!(grid)])
-    }
-
-    async fn on_key_press(&mut self, key: &Key_event) -> Result<Vizual_msg> {
-        if check_quit_event(key) {
-            if !self.submitting {
-                self.submitting = true;
-
-                return Vizual_msg::none();
-            }
-
-            return Vizual_msg::none();
-        }
-
-        Vizual_msg::none()
     }
 }
