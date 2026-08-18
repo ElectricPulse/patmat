@@ -10,7 +10,7 @@ use std::{
 };
 use vizual::{
     state::{State, Store},
-    widget::{Widget, widgets::positioning::anchor::Anchor},
+    widget::{Widget, Widget_trait, widgets::positioning::anchor::Anchor},
 };
 
 #[cfg(test)]
@@ -42,7 +42,7 @@ impl task::Task_trait for Task {
     type Output = ();
 
     async fn run(&self, widget: Store<Option<Widget>>) -> task::Task_result {
-        *widget.write().await? = Some(Box::new(Anchor::middle(self.widget())));
+        *widget.write().await? = Some(Anchor::middle(self.widget()).as_any());
 
         let git_dir = self.path.join(".git");
 
