@@ -17,8 +17,11 @@ unused_results = "warn"
 name = "patmat"
 version = "0.1.0"
 edition = "2024"
+description = "An async target and task execution runner with a reactive Vizual GUI"
 repository = "https://github.com/ElectricPulse/patmat"
 license = "Apache-2.0"
+categories = ["development-tools::build-utils", "gui", "asynchronous"]
+keywords = ["build-tool", "task-runner", "gui", "git", "vizual"]
 
 [dependencies]
 ambassador = "0.5.0"

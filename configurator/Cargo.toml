@@ -5,6 +5,8 @@ edition = "2024"
 description = "A tree-based configuration editor for Patmat applications"
 repository = "https://github.com/ElectricPulse/patmat"
 license = "Apache-2.0"
+categories = ["config", "gui"]
+keywords = ["config", "editor", "tree", "gui", "vizual"]
 
 [dependencies]
 async-recursion = "1.1.1"
