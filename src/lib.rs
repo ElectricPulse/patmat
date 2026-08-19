@@ -93,8 +93,8 @@ impl Widget_trait for Builder {
         let status_label = status.label();
 
         let theme = theme.affect(render.clone()).await?;
-        let mut name = Paragraph::new(Direction::Horizontal, theme.units.em * 15.0);
-        name.set_styled_content(name_content, theme.specific.text.title);
+        let mut name = Text::new(name_content);
+        name.style.set(theme.specific.text.title);
 
         let name_item = Anchor::left(name);
         let path_item = Anchor::left(Text::new(format!("Path: {path}")));

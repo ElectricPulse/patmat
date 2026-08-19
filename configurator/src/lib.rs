@@ -14,11 +14,27 @@ use serde::Serialize;
 use vizual_macros::display;
 
 use vizual::{
-    Vizual_msg, component::Children, event::{Event, Key_event, Pointer_event}, geometry::Direction, handlers::{Retrieve_handler, Submit_handler}, state::State, sync::{Mutex, Thread_safe}, widget::{
-        Layout_input, Render_input, Widget, Widget_trait, custom_widget::Custom_widget_trait, widgets::{
-            button::Button, layout::{axis::Axis, grid::Grid}, linebreak::Linebreak, menu::{Menu, Menu_item}, positioning::{
-                anchor::{Anchor, Anchors, Anchor_position}, space::Space,
-            }, text::Text, title_block::Title_block,
+    Vizual_msg,
+    component::Children,
+    event::{Event, Key_event, Pointer_event},
+    geometry::Direction,
+    handlers::{Retrieve_handler, Submit_handler},
+    state::State,
+    sync::{Mutex, Thread_safe},
+    widget::{
+        Layout_input, Render_input, Widget, Widget_trait,
+        custom_widget::Custom_widget_trait,
+        widgets::{
+            button::Button,
+            layout::{axis::Axis, grid::Grid},
+            linebreak::Linebreak,
+            menu::{Menu, Menu_item},
+            positioning::{
+                anchor::{Anchor, Anchor_position, Anchors},
+                space::Space,
+            },
+            text::Text,
+            title_block::Title_block,
         },
     },
 };
@@ -223,11 +239,13 @@ impl<Tree: crate::Tree> Submit_handler<bool> for Configurator<Tree> {
         let config = self.tree.lock().await?.create_config().await?;
         let string =
             serde_saphyr::to_string(&config).wrap_err("Failed to serialize configuration")?;
-        fs::write(&self.configuration_path, string).wrap_err("Failed to save configuration")?;
+
         println!(
-            "Configuration saved to {}",
+            "Saving configuration to {}",
             self.configuration_path.display()
         );
+
+        fs::write(&self.configuration_path, string).wrap_err("Failed to save configuration")?;
 
         if let Some(submit_handler) = &mut self.submit_handler {
             return submit_handler.on_submit(config).await;
