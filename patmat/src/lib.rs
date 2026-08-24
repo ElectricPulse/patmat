@@ -48,7 +48,7 @@ impl Builder {
 
     pub fn title(&self) -> String {
         let normalized = normalize_path(&self.working_directory);
-        format!("PatMat - {normalized}")
+        format!("Patmat {normalized}")
     }
 }
 
