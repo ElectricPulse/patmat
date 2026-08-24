@@ -10,8 +10,8 @@ readme = "README.md"
 
 [workspace.dependencies]
 derive-where = "1.6.1"
-vizual = { git = "https://github.com/ElectricPulse/vizual" }
-vizual-macros = { git = "https://github.com/ElectricPulse/vizual" }
+vizual = { version = "0.1.4", git = "https://github.com/ElectricPulse/vizual" }
+vizual-macros = { version = "0.1.2", git = "https://github.com/ElectricPulse/vizual" }
 
 [workspace.lints.rust]
 non_camel_case_types = "allow"
