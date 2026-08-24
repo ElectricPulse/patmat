@@ -113,12 +113,13 @@ impl Widget_trait for Builder {
 
         let name_item = Anchor::left(name);
 
-        let paragraph_width = theme.units.em * 35.0;
+        let path_paragraph_width = theme.units.em * 10.0;
+        let paragraph_width = theme.units.em * 30.0;
         let label_style = theme.specific.text.paragraph.bold();
 
         let mut path_label = Text::new("Path:");
         path_label.style.set(label_style);
-        let mut path_paragraph = Paragraph::new(Direction::Horizontal, paragraph_width);
+        let mut path_paragraph = Paragraph::new(Direction::Horizontal, path_paragraph_width);
         path_paragraph.set_styled_content(path, theme.specific.text.paragraph);
         let path_item = Anchor::left(Axis::new(
             Direction::Horizontal,

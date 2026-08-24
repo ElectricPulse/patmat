@@ -2,7 +2,7 @@
 
 ![PatMat](assets/patmat.gif)
 
-PatMat is a Makefile-like GUI build tool with an interface built on [Vizual](https://github.com/ElectricPulse/vizual).
+PatMat is a build tool whose recipes are meant to be written with the ease of a Makefile but with the flexibility of a script
 
 ## Features
 
