@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use color_eyre::Result;
 use derive_new::new;
+use lucide_icons::Icon as Lucide_icon;
 use std::path::PathBuf;
 use vizual::{
     component::Children,
@@ -75,11 +76,17 @@ impl Custom_widget_trait for Target_tree_item {
         let details = match path {
             Some(path) => {
                 let path = display_target_path(&path, &self.working_directory);
-                let mut path_text = Text::new(format!("- {path}"));
+                let mut path_text = Text::new(path);
                 let mut path_style = theme.specific.text.paragraph;
                 path_style.color = theme.semantic.text.muted;
                 path_text.style.set(path_style);
-                let path = Anchor::left(path_text);
+                let mut folder_icon = Icon::new(Lucide_icon::Folder);
+                folder_icon.style.set(path_style);
+                let path_row = Axis::new(
+                    Direction::Horizontal,
+                    (Anchor::left(folder_icon), Anchor::left(path_text)),
+                );
+                let path = Anchor::left(path_row);
                 Axis::new(Direction::Vertical, (name, path))
             }
             None => Axis::new(Direction::Vertical, (name,)),

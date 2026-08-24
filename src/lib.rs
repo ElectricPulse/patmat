@@ -1,10 +1,13 @@
 pub mod target;
 pub mod task;
 mod ui;
-mod utils;
+pub mod utils;
+
+pub use utils::normalize_path;
 
 use color_eyre::eyre::Result;
-use std::path::PathBuf;
+use lucide_icons::Icon as Lucide_icon;
+use std::path::{Path, PathBuf};
 use vizual_macros::display;
 
 use crate::{
@@ -20,6 +23,7 @@ use vizual::{
     widget::{
         Layout_input, Shared_widget, Widget_trait,
         widgets::{
+            icon::Icon,
             layout::axis::Axis,
             linebreak::Linebreak,
             paragraph::Paragraph,
@@ -35,6 +39,17 @@ pub struct Builder {
     target_tree: Shared_widget<Scroll>,
     selected_dependency: Store<Dependency>,
     working_directory: PathBuf,
+}
+
+impl Builder {
+    pub fn working_directory(&self) -> &Path {
+        &self.working_directory
+    }
+
+    pub fn title(&self) -> String {
+        let normalized = normalize_path(&self.working_directory);
+        format!("PatMat - {normalized}")
+    }
 }
 
 pub fn new(dependencies: Dependencies, working_directory: PathBuf) -> Builder {
@@ -97,22 +112,62 @@ impl Widget_trait for Builder {
         name.style.set(theme.specific.text.title);
 
         let name_item = Anchor::left(name);
-        let path_item = Anchor::left(Text::new(format!("Path: {path}")));
-        let status_item = Anchor::left(Text::new(format!("Status: {status_label}")));
+
+        let paragraph_width = theme.units.em * 35.0;
+
+        let mut path_paragraph = Paragraph::new(Direction::Horizontal, paragraph_width);
+        path_paragraph.set_ansi_content(
+            format!("\x1b[1mPath:\x1b[0m {path}"),
+            theme.specific.text.paragraph.size,
+        );
+        let path_item = Anchor::left(Axis::new(
+            Direction::Horizontal,
+            (
+                Anchor::left(Icon::new(Lucide_icon::Folder)),
+                Anchor::left(path_paragraph),
+            ),
+        ));
+
+        let mut status_paragraph = Paragraph::new(Direction::Horizontal, paragraph_width);
+        status_paragraph.set_ansi_content(
+            format!("\x1b[1mStatus:\x1b[0m {status_label}"),
+            theme.specific.text.paragraph.size,
+        );
+        let status_item = Anchor::left(Axis::new(
+            Direction::Horizontal,
+            (
+                Anchor::left(Icon::new(status.get_icon())),
+                Anchor::left(status_paragraph),
+            ),
+        ));
 
         let metadata = if let Target_status::Error(error) = &status {
             let mut error_paragraph = Paragraph::new(Direction::Horizontal, theme.units.em * 25.0);
             error_paragraph.set_styled_content(format!("{error:#}"), theme.specific.text.paragraph);
-            let error_title = Anchor::left(Text::new("Error message:"));
+            let mut error_title_p = Paragraph::new(Direction::Horizontal, paragraph_width);
+            error_title_p.set_ansi_content("\x1b[1mError message:\x1b[0m", theme.specific.text.paragraph.size);
+            let error_title = Anchor::left(Axis::new(
+                Direction::Horizontal,
+                (
+                    Anchor::left(Icon::new(Lucide_icon::AlertCircle)),
+                    Anchor::left(error_title_p),
+                ),
+            ));
             let error_body = Anchor::left(error_paragraph);
-            Axis::new(Direction::Vertical, (name_item, path_item, status_item, error_title, error_body))
+            Axis::new(
+                Direction::Vertical,
+                (name_item, path_item, status_item, error_title, error_body),
+            )
         } else {
             Axis::new(Direction::Vertical, (name_item, path_item, status_item))
         };
 
         let widget = dependency.widget().affect(render.clone()).await?.clone();
         let mut panel = if let Some(widget) = widget {
-            Axis::new(Direction::Vertical, (metadata, Linebreak::new(Direction::Horizontal), widget))
+            Axis::new(
+                Direction::Vertical,
+                (metadata, Linebreak::new(Direction::Horizontal), widget),
+            )
         } else {
             Axis::new(Direction::Vertical, (metadata,))
         };
@@ -120,14 +175,9 @@ impl Widget_trait for Builder {
         panel.limit_cross = true;
         let panel = Anchor::top(panel);
 
-        let content = Axis::new(Direction::Horizontal, (self.target_tree.clone(), Linebreak::new(Direction::Vertical), panel));
-        let working_directory = Anchor::left(Text::new(format!(
-            "Working directory: {}",
-            self.working_directory.display()
-        )));
         let axis = Axis::new(
-            Direction::Vertical,
-            (working_directory, content),
+            Direction::Horizontal,
+            (self.target_tree.clone(), Linebreak::new(Direction::Vertical), panel),
         );
 
         Ok(vec![display!(axis)])
