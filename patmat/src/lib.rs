@@ -123,9 +123,9 @@ impl Widget_trait for Builder {
         let path_item = Anchor::left(Axis::new(
             Direction::Horizontal,
             (
-                Anchor::left(Icon::new(Lucide_icon::Folder)),
-                Anchor::left(path_label),
-                Anchor::left(path_paragraph),
+                Anchor::middle(Icon::new(Lucide_icon::Folder)),
+                Anchor::top_left(path_label),
+                Anchor::top_left(path_paragraph),
             ),
         ));
 
@@ -136,9 +136,9 @@ impl Widget_trait for Builder {
         let status_item = Anchor::left(Axis::new(
             Direction::Horizontal,
             (
-                Anchor::left(Icon::new(status.get_icon())),
-                Anchor::left(status_label_text),
-                Anchor::left(status_paragraph),
+                Anchor::middle(Icon::new(status.get_icon())),
+                Anchor::top_left(status_label_text),
+                Anchor::top_left(status_paragraph),
             ),
         ));
 
@@ -150,8 +150,8 @@ impl Widget_trait for Builder {
             let error_title = Anchor::left(Axis::new(
                 Direction::Horizontal,
                 (
-                    Anchor::left(Icon::new(Lucide_icon::AlertCircle)),
-                    Anchor::left(error_title_label),
+                    Anchor::middle(Icon::new(Lucide_icon::AlertCircle)),
+                    Anchor::top_left(error_title_label),
                 ),
             ));
             let error_body = Anchor::left(error_paragraph);
