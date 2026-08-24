@@ -15,7 +15,7 @@ use vizual::{
             icon::Icon,
             layout::axis::Axis,
             menu::{Menu, Menu_item},
-            positioning::anchor::{Anchor, Anchors, Anchor_position},
+            positioning::anchor::Anchor,
             text::Text,
         },
     },
@@ -56,13 +56,7 @@ impl Custom_widget_trait for Target_tree_item {
         let metadata = self.target.get_metadata();
 
         let icon = Icon::new(metadata.status.affect(render.clone()).await?.get_icon());
-        let icon = Anchor::new(
-            icon,
-            Anchors {
-                vertical: Some(Anchor_position::Middle),
-                horizontal: None,
-            },
-        );
+        let icon = Anchor::v_middle(icon);
 
         let mut name = Text::new(metadata.name);
         let mut name_style = theme.specific.text.paragraph;
@@ -84,14 +78,14 @@ impl Custom_widget_trait for Target_tree_item {
                 folder_icon.style.set(path_style);
                 let path_row = Axis::new(
                     Direction::Horizontal,
-                    (Anchor::middle(folder_icon), Anchor::middle(path_text)),
+                    (Anchor::v_middle(folder_icon), Anchor::v_middle(path_text)),
                 );
                 let path = Anchor::top_left(path_row);
                 Axis::new(Direction::Vertical, (name, path))
             }
             None => Axis::new(Direction::Vertical, (name,)),
         };
-        let details = Anchor::middle(details);
+        let details = Anchor::v_middle(details);
 
         let row = Axis::new(
             Direction::Horizontal,
