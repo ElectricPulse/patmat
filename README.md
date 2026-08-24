@@ -2,7 +2,7 @@
 
 ![PatMat](assets/patmat.gif)
 
-PatMat is an asynchronous target and task execution runner with a reactive [Vizual](https://github.com/ElectricPulse/vizual) GUI.
+PatMat is a Makefile-like GUI build tool with an interface built on [Vizual](https://github.com/ElectricPulse/vizual).
 
 ## Features
 

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["configurator"]
+members = ["patmat", "configurator"]
 
 [workspace.dependencies]
 derive-where = "1.6.1"
@@ -13,41 +13,5 @@ non_upper_case_globals = "allow"
 unused_must_use = "warn"
 unused_results = "warn"
 
-[package]
-name = "patmat"
-version = "0.1.0"
-edition = "2024"
-description = "An async target and task execution runner with a reactive Vizual GUI"
-repository = "https://github.com/ElectricPulse/patmat"
-license = "Apache-2.0"
-categories = ["development-tools::build-utils", "gui", "asynchronous"]
-keywords = ["build-tool", "task-runner", "gui", "git", "vizual"]
-
-[dependencies]
-ambassador = "0.5.0"
-async-trait = "0.1.89"
-color-eyre = "0.6.5"
-derive-new = "0.7.0"
-dyn-clone = "1.0.20"
-gix = { version = "0.86.0", default-features = false, features = [
-    "auto-chain-error",
-    "blocking-http-transport-reqwest-rust-tls",
-    "comfort",
-    "parallel",
-    "progress-tree",
-    "sha1",
-    "sha256",
-    "worktree-mutation",
-] }
-lucide-icons = "1.28.0"
-regex = "1.11.3"
-tokio = { version = "1.47.1", features = ["full"] }
-uniqify = "0.1.0"
-vizual.workspace = true
-vizual-macros.workspace = true
-
-[lints]
-workspace = true
-
-[dev-dependencies]
-tempfile = "3.21.0"
+[workspace.package]
+readme = "README.md"

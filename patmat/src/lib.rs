@@ -114,29 +114,30 @@ impl Widget_trait for Builder {
         let name_item = Anchor::left(name);
 
         let paragraph_width = theme.units.em * 35.0;
+        let label_style = theme.specific.text.paragraph.bold();
 
+        let mut path_label = Text::new("Path:");
+        path_label.style.set(label_style);
         let mut path_paragraph = Paragraph::new(Direction::Horizontal, paragraph_width);
-        path_paragraph.set_ansi_content(
-            format!("\x1b[1mPath:\x1b[0m {path}"),
-            theme.specific.text.paragraph.size,
-        );
+        path_paragraph.set_styled_content(path, theme.specific.text.paragraph);
         let path_item = Anchor::left(Axis::new(
             Direction::Horizontal,
             (
                 Anchor::left(Icon::new(Lucide_icon::Folder)),
+                Anchor::left(path_label),
                 Anchor::left(path_paragraph),
             ),
         ));
 
+        let mut status_label_text = Text::new("Status:");
+        status_label_text.style.set(label_style);
         let mut status_paragraph = Paragraph::new(Direction::Horizontal, paragraph_width);
-        status_paragraph.set_ansi_content(
-            format!("\x1b[1mStatus:\x1b[0m {status_label}"),
-            theme.specific.text.paragraph.size,
-        );
+        status_paragraph.set_styled_content(status_label, theme.specific.text.paragraph);
         let status_item = Anchor::left(Axis::new(
             Direction::Horizontal,
             (
                 Anchor::left(Icon::new(status.get_icon())),
+                Anchor::left(status_label_text),
                 Anchor::left(status_paragraph),
             ),
         ));
@@ -144,13 +145,13 @@ impl Widget_trait for Builder {
         let metadata = if let Target_status::Error(error) = &status {
             let mut error_paragraph = Paragraph::new(Direction::Horizontal, theme.units.em * 25.0);
             error_paragraph.set_styled_content(format!("{error:#}"), theme.specific.text.paragraph);
-            let mut error_title_p = Paragraph::new(Direction::Horizontal, paragraph_width);
-            error_title_p.set_ansi_content("\x1b[1mError message:\x1b[0m", theme.specific.text.paragraph.size);
+            let mut error_title_label = Text::new("Error message:");
+            error_title_label.style.set(label_style);
             let error_title = Anchor::left(Axis::new(
                 Direction::Horizontal,
                 (
                     Anchor::left(Icon::new(Lucide_icon::AlertCircle)),
-                    Anchor::left(error_title_p),
+                    Anchor::left(error_title_label),
                 ),
             ));
             let error_body = Anchor::left(error_paragraph);

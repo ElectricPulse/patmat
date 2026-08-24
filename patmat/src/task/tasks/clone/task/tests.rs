@@ -6,8 +6,12 @@ fn clones_and_checks_out_a_local_repository() -> Result<()> {
     let destination = temporary.path().join("clone");
     let progress = gix::progress::tree::Root::new();
 
+    let repo_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap_or_else(|| std::path::Path::new(env!("CARGO_MANIFEST_DIR")));
+
     clone_repository(
-        env!("CARGO_MANIFEST_DIR").to_string(),
+        repo_dir.to_string_lossy().to_string(),
         destination.clone(),
         progress,
     )?;
