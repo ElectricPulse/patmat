@@ -1,6 +1,6 @@
 # PatMat
 
-![PatMat](assets/patmat.gif)
+![banner](assets/banner.gif)
 
 PatMat is a build tool whose recipes are meant to be written with the ease of a Makefile but with the flexibility of a script
 
@@ -16,6 +16,10 @@ PatMat is a build tool whose recipes are meant to be written with the ease of a 
 - **Targets and Tasks**: A `Target` defines an execution node with dependencies and an associated `Task_trait`.
 - **Reactive UI**: The `Builder` widget renders the dependency tree, selection details, and active widgets via Vizual stores.
 - **Terminal Task**: Runs commands with live terminal output embedded in the UI panel.
+
+## Demo
+
+![demo](assets/demo.gif)
 
 ## Technologies used
 
