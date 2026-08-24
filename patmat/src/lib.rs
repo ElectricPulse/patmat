@@ -125,8 +125,8 @@ impl Widget_trait for Builder {
             Direction::Horizontal,
             (
                 Anchor::middle(Icon::new(Lucide_icon::Folder)),
-                Anchor::top_left(path_label),
-                Anchor::top_left(path_paragraph),
+                Anchor::middle(path_label),
+                Anchor::middle(path_paragraph),
             ),
         ));
 
@@ -138,8 +138,8 @@ impl Widget_trait for Builder {
             Direction::Horizontal,
             (
                 Anchor::middle(Icon::new(status.get_icon())),
-                Anchor::top_left(status_label_text),
-                Anchor::top_left(status_paragraph),
+                Anchor::middle(status_label_text),
+                Anchor::middle(status_paragraph),
             ),
         ));
 
@@ -152,7 +152,7 @@ impl Widget_trait for Builder {
                 Direction::Horizontal,
                 (
                     Anchor::middle(Icon::new(Lucide_icon::AlertCircle)),
-                    Anchor::top_left(error_title_label),
+                    Anchor::middle(error_title_label),
                 ),
             ));
             let error_body = Anchor::left(error_paragraph);

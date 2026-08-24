@@ -84,7 +84,7 @@ impl Custom_widget_trait for Target_tree_item {
                 folder_icon.style.set(path_style);
                 let path_row = Axis::new(
                     Direction::Horizontal,
-                    (Anchor::middle(folder_icon), Anchor::top_left(path_text)),
+                    (Anchor::middle(folder_icon), Anchor::middle(path_text)),
                 );
                 let path = Anchor::top_left(path_row);
                 Axis::new(Direction::Vertical, (name, path))
