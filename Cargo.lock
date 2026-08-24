@@ -543,24 +543,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "configurator"
-version = "0.1.1"
-dependencies = [
- "async-recursion",
- "async-trait",
- "color-eyre",
- "derive-where",
- "dyn-clone",
- "indexmap",
- "serde",
- "serde-saphyr",
- "tokio",
- "uniqify",
- "vizual",
- "vizual-macros",
-]
-
-[[package]]
 name = "core-foundation"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3362,25 +3344,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "patmat"
-version = "0.1.1"
-dependencies = [
- "ambassador",
- "async-trait",
- "color-eyre",
- "derive-new",
- "dyn-clone",
- "gix",
- "lucide-icons",
- "regex",
- "tempfile",
- "tokio",
- "uniqify",
- "vizual",
- "vizual-macros",
-]
-
-[[package]]
 name = "peniko"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4913,12 +4876,49 @@ dependencies = [
 ]
 
 [[package]]
+name = "vizual-configurator"
+version = "0.1.1"
+dependencies = [
+ "async-recursion",
+ "async-trait",
+ "color-eyre",
+ "derive-where",
+ "dyn-clone",
+ "indexmap",
+ "serde",
+ "serde-saphyr",
+ "tokio",
+ "uniqify",
+ "vizual",
+ "vizual-macros",
+]
+
+[[package]]
 name = "vizual-macros"
 version = "0.1.2"
 dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.119",
+]
+
+[[package]]
+name = "vizual-patmat"
+version = "0.1.1"
+dependencies = [
+ "ambassador",
+ "async-trait",
+ "color-eyre",
+ "derive-new",
+ "dyn-clone",
+ "gix",
+ "lucide-icons",
+ "regex",
+ "tempfile",
+ "tokio",
+ "uniqify",
+ "vizual",
+ "vizual-macros",
 ]
 
 [[package]]
