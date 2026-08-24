@@ -1,10 +1,10 @@
 [package]
 name = "patmat"
-version = "0.1.0"
-edition = "2024"
+version = "0.1.1"
+edition.workspace = true
 description = "A Makefile-like GUI build tool"
-repository = "https://github.com/ElectricPulse/patmat"
-license = "Apache-2.0"
+repository.workspace = true
+license.workspace = true
 readme.workspace = true
 categories = ["development-tools::build-utils", "gui", "asynchronous"]
 keywords = ["build-tool", "task-runner", "gui", "git", "vizual"]

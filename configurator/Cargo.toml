@@ -1,10 +1,10 @@
 [package]
 name = "configurator"
-version = "0.1.0"
-edition = "2024"
+version = "0.1.1"
+edition.workspace = true
 description = "A tree-based configuration editor for Patmat applications"
-repository = "https://github.com/ElectricPulse/patmat"
-license = "Apache-2.0"
+repository.workspace = true
+license.workspace = true
 categories = ["config", "gui"]
 keywords = ["config", "editor", "tree", "gui", "vizual"]
 
