@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 #[derive(Clone)]
 pub struct Task {
-    pub(super) terminal: Terminal,
+    pub(super) terminal: Option<Terminal>,
     pub(super) command: String,
     pub(super) working_dir: Option<PathBuf>,
 }
@@ -18,7 +18,7 @@ pub struct Task {
 impl Task {
     pub fn new(command: impl Into<String>) -> Self {
         Self {
-            terminal: Terminal::new(),
+            terminal: None,
             command: command.into(),
             working_dir: None,
         }
@@ -26,7 +26,7 @@ impl Task {
 
     pub fn new_in_dir(command: impl Into<String>, working_dir: impl Into<PathBuf>) -> Self {
         Self {
-            terminal: Terminal::new(),
+            terminal: None,
             command: command.into(),
             working_dir: Some(working_dir.into()),
         }
@@ -34,7 +34,7 @@ impl Task {
 
     pub fn with_terminal(terminal: Terminal, command: impl Into<String>) -> Self {
         Self {
-            terminal,
+            terminal: Some(terminal),
             command: command.into(),
             working_dir: None,
         }
@@ -46,13 +46,13 @@ impl Task {
         working_dir: impl Into<PathBuf>,
     ) -> Self {
         Self {
-            terminal,
+            terminal: Some(terminal),
             command: command.into(),
             working_dir: Some(working_dir.into()),
         }
     }
 
-    pub fn widget(&self) -> Terminal {
+    pub fn widget(&self) -> Option<Terminal> {
         self.terminal.clone()
     }
 }
@@ -69,11 +69,15 @@ impl task::Task_trait for Task {
     }
 
     async fn run(&self, widget: Store<Option<Widget>>) -> task::Task_result {
-        widget.set(Some(self.terminal.clone().as_any())).await?;
+        let terminal = match &self.terminal {
+            Some(terminal) => terminal.clone(),
+            None => Terminal::new().await,
+        };
+        widget.set(Some(terminal.clone().as_any())).await?;
 
         let handle = match &self.working_dir {
-            Some(working_dir) => self.terminal.run_in_dir(&self.command, working_dir),
-            None => self.terminal.run(&self.command),
+            Some(working_dir) => terminal.run_in_dir(&self.command, working_dir).await,
+            None => terminal.run(&self.command).await,
         }?;
 
         handle.wait().await?;
