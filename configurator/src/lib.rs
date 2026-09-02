@@ -16,13 +16,14 @@ use vizual_macros::display;
 use vizual::{
     Vizual_msg,
     component::Children,
-    event::{Event, Key_event, Pointer_event},
+    event::Event,
     geometry::Direction,
     handlers::{Retrieve_handler, Submit_handler},
     state::State,
     sync::{Mutex, Thread_safe},
     widget::{
-        Layout_input, Render_input, Widget, Widget_trait,
+        All_events, Key_press, Layout_input, Mouse_event, Other_event, Render_input, Widget,
+        Widget_trait,
         custom_widget::Custom_widget_trait,
         widgets::{
             button::Button,
@@ -69,24 +70,28 @@ impl<Value: Thread_safe + 'static> Widget_trait for Box<dyn Field<Value>> {
         (**self).render(input).await
     }
 
-    async fn on_all_events(&mut self, event: &Event) -> Result<Vizual_msg> {
-        (**self).on_all_events(event).await
+    async fn on_all_events(&mut self, input: All_events<'_>) -> Result<Vizual_msg> {
+        (**self).on_all_events(input).await
     }
 
-    async fn on_mouse_click(&mut self, mouse: &Pointer_event) -> Result<Vizual_msg> {
-        (**self).on_mouse_click(mouse).await
+    async fn on_mouse_click(&mut self, input: Mouse_event<'_>) -> Result<Vizual_msg> {
+        (**self).on_mouse_click(input).await
     }
 
-    async fn on_key_press(&mut self, key: &Key_event) -> Result<Vizual_msg> {
-        (**self).on_key_press(key).await
+    async fn on_key_press(&mut self, input: Key_press<'_>) -> Result<Vizual_msg> {
+        (**self).on_key_press(input).await
     }
 
-    async fn on_other_event(&mut self, event: &Event) -> Result<Vizual_msg> {
-        (**self).on_other_event(event).await
+    async fn on_other_event(&mut self, input: Other_event<'_>) -> Result<Vizual_msg> {
+        (**self).on_other_event(input).await
     }
 
-    async fn forward_event(&mut self, event: &Event) -> Result<Vizual_msg> {
-        (**self).forward_event(event).await
+    async fn forward_event(
+        &mut self,
+        event: &Event,
+        relayout: vizual::Signal,
+    ) -> Result<Vizual_msg> {
+        (**self).forward_event(event, relayout).await
     }
 }
 
@@ -173,7 +178,7 @@ impl Custom_widget_trait for Tree_menu_item {
     async fn layout(
         &mut self,
         Layout_input {
-            render,
+            relayout,
             theme,
             slots,
             ..
@@ -181,7 +186,7 @@ impl Custom_widget_trait for Tree_menu_item {
         selected: bool,
     ) -> Result<Children> {
         const INDENT: usize = 50;
-        let theme = theme.affect(render).await?;
+        let theme = theme.affect(relayout).await?;
         let mut text = Text::new(&self.name);
         let mut style = theme.specific.text.paragraph;
         if !selected {
@@ -286,7 +291,7 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
     async fn layout(
         &mut self,
         Layout_input {
-            render,
+            relayout,
             theme,
             slots,
             ..
@@ -296,7 +301,7 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
             .menu
             .on_retrieve()
             .await?
-            .affect(render.clone())
+            .affect(relayout.clone())
             .await?
             .clone();
 
@@ -325,7 +330,7 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
             }
         };
 
-        let theme = theme.affect(render).await?;
+        let theme = theme.affect(relayout).await?;
         let gap = theme.semantic.axis.gap;
         let menu = Title_block::new(self.menu.clone(), "Config");
         let menu = Anchor::top_left(menu);

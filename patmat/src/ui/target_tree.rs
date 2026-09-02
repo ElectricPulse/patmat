@@ -45,17 +45,17 @@ impl Custom_widget_trait for Target_tree_item {
     async fn layout(
         &mut self,
         Layout_input {
-            render,
+            relayout,
             theme,
             slots,
             ..
         }: Layout_input<'_>,
         selected: bool,
     ) -> Result<Children> {
-        let theme = theme.affect(render.clone()).await?;
+        let theme = theme.affect(relayout.clone()).await?;
         let metadata = self.target.get_metadata();
 
-        let icon = Icon::new(metadata.status.affect(render.clone()).await?.get_icon());
+        let icon = Icon::new(metadata.status.affect(relayout.clone()).await?.get_icon());
         let icon = Anchor::v_middle(icon);
 
         let mut name = Text::new(metadata.name);
@@ -66,7 +66,7 @@ impl Custom_widget_trait for Target_tree_item {
         name.style.set(name_style);
         let name = Anchor::left(name);
 
-        let path = metadata.path.affect(render).await?.clone();
+        let path = metadata.path.affect(relayout).await?.clone();
         let details = match path {
             Some(path) => {
                 let path = display_target_path(&path, &self.working_directory);
@@ -87,10 +87,7 @@ impl Custom_widget_trait for Target_tree_item {
         };
         let details = Anchor::v_middle(details);
 
-        let row = Axis::new(
-            Direction::Horizontal,
-            (details, icon),
-        );
+        let row = Axis::new(Direction::Horizontal, (details, icon));
 
         Ok(vec![display!(row)])
     }
@@ -124,12 +121,10 @@ impl Widget_trait for Target_tree {
     async fn layout(
         &mut self,
         Layout_input {
-            render,
-            slots,
-            ..
+            relayout, slots, ..
         }: Layout_input<'_>,
     ) -> Result<Children> {
-        let targets = get_targets(&self.dependencies, render.clone())
+        let targets = get_targets(&self.dependencies, relayout.clone())
             .await?
             .into_iter()
             .map(|target| -> Menu_item<Dependency> {

@@ -1,10 +1,10 @@
-use std::{marker::PhantomData, sync::Arc};
 use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use derive_where::derive_where;
+use std::{marker::PhantomData, sync::Arc};
 use vizual::geometry::Direction;
 use vizual::{
-    Render,
+    Signal,
     component::Children,
     handlers::Retrieve_handler,
     state::{Constant, Read_guard, State, State_trait},
@@ -36,7 +36,7 @@ impl<Value: Thread_safe + Clone> State_trait for Some_state<Value> {
         Ok(Read_guard::new(Arc::new(Some((*guard).clone()))))
     }
 
-    async fn affect(&self, signal: Render) -> Result<Read_guard<Self::Output>> {
+    async fn affect(&self, signal: Signal) -> Result<Read_guard<Self::Output>> {
         let guard = self.0.affect(signal).await?;
         Ok(Read_guard::new(Arc::new(Some((*guard).clone()))))
     }
@@ -62,14 +62,14 @@ impl<Value: Thread_safe> Custom_widget_trait for Default_leaf_value<Value> {
     async fn layout(
         &mut self,
         Layout_input {
-            render,
+            relayout,
             theme,
             slots,
             ..
         }: Layout_input<'_>,
         selected: bool,
     ) -> Result<Children> {
-        let theme = theme.affect(render).await?;
+        let theme = theme.affect(relayout).await?;
         let mut text = Text::new(format!("Default - {}", self.label));
         let mut style = theme.specific.text.button;
         if !selected {
@@ -101,14 +101,14 @@ impl<Value: Thread_safe> Custom_widget_trait for Custom_leaf_value<Value> {
     async fn layout(
         &mut self,
         Layout_input {
-            render,
+            relayout,
             theme,
             slots,
             ..
         }: Layout_input<'_>,
         selected: bool,
     ) -> Result<Children> {
-        let theme = theme.affect(render).await?;
+        let theme = theme.affect(relayout).await?;
         let mut title = Text::new("Custom");
         let mut style = theme.specific.text.button;
         if !selected {
@@ -160,10 +160,7 @@ impl<Value: Clone + Thread_safe> Optional_setting<Value> {
 
 #[async_trait]
 impl<Value: Clone + Thread_safe> Widget_trait for Optional_setting<Value> {
-    async fn layout(
-        &mut self,
-        Layout_input { slots, .. }: Layout_input<'_>,
-    ) -> Result<Children> {
+    async fn layout(&mut self, Layout_input { slots, .. }: Layout_input<'_>) -> Result<Children> {
         Ok(vec![display!(self.menu.clone())])
     }
 }

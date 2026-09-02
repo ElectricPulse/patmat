@@ -1,7 +1,7 @@
 use crate::target::{Dependencies, Dependency};
 use color_eyre::eyre::Result;
 use std::{collections::HashSet, path::Path};
-use vizual::Render;
+use vizual::Signal;
 
 pub fn normalize_path(path: impl AsRef<Path>) -> String {
     let path = path.as_ref();
@@ -36,15 +36,19 @@ pub(crate) fn display_target_path(path: &Path, working_directory: &Path) -> Stri
     }
 }
 
-pub(crate) async fn get_targets(roots: &[Dependency], render: Render) -> Result<Dependencies> {
+pub(crate) async fn get_targets(roots: &[Dependency], relayout: Signal) -> Result<Dependencies> {
     let mut remaining = roots.iter().rev().cloned().collect::<Dependencies>();
     let mut unique = Dependencies::new();
     let mut target_ids = HashSet::new();
 
     while let Some(target) = remaining.pop() {
         let metadata = target.get_metadata();
-        let id = *metadata.id.affect(render.clone()).await?;
-        let dependencies = metadata.dependencies.affect(render.clone()).await?.clone();
+        let id = *metadata.id.affect(relayout.clone()).await?;
+        let dependencies = metadata
+            .dependencies
+            .affect(relayout.clone())
+            .await?
+            .clone();
         if target_ids.insert(id) {
             remaining.extend(dependencies.into_iter().rev());
             unique.push(target);

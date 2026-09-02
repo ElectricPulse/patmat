@@ -23,13 +23,8 @@ use vizual::{
     widget::{
         Layout_input, Shared_widget, Widget_trait,
         widgets::{
-            icon::Icon,
-            layout::axis::Axis,
-            linebreak::Linebreak,
-            paragraph::Paragraph,
-            positioning::anchor::Anchor,
-            scroll::Scroll,
-            text::Text,
+            icon::Icon, layout::axis::Axis, linebreak::Linebreak, paragraph::Paragraph,
+            positioning::anchor::Anchor, scroll::Scroll, text::Text,
         },
     },
 };
@@ -86,28 +81,28 @@ impl Widget_trait for Builder {
     async fn layout(
         &mut self,
         Layout_input {
-            render,
+            relayout,
             theme,
             slots,
             ..
         }: Layout_input<'_>,
     ) -> Result<Children> {
-        let dependency = &*self.selected_dependency.affect(render.clone()).await?;
+        let dependency = &*self.selected_dependency.affect(relayout.clone()).await?;
         let metadata = dependency.get_metadata();
-        let name_content = metadata.name.affect(render.clone()).await?.clone();
+        let name_content = metadata.name.affect(relayout.clone()).await?.clone();
         let path = metadata
             .path
-            .affect(render.clone())
+            .affect(relayout.clone())
             .await?
             .as_ref()
             .map_or_else(
                 || "None".to_owned(),
                 |path| display_target_path(path, &self.working_directory),
             );
-        let status = metadata.status.affect(render.clone()).await?.clone();
+        let status = metadata.status.affect(relayout.clone()).await?.clone();
         let status_label = status.label();
 
-        let theme = theme.affect(render.clone()).await?;
+        let theme = theme.affect(relayout.clone()).await?;
         let mut name = Text::new(name_content);
         name.style.set(theme.specific.text.title);
 
@@ -164,7 +159,7 @@ impl Widget_trait for Builder {
             Axis::new(Direction::Vertical, (name_item, path_item, status_item))
         };
 
-        let widget = dependency.widget().affect(render.clone()).await?.clone();
+        let widget = dependency.widget().affect(relayout.clone()).await?.clone();
         let mut panel = if let Some(widget) = widget {
             Axis::new(
                 Direction::Vertical,
@@ -179,7 +174,11 @@ impl Widget_trait for Builder {
 
         let axis = Axis::new(
             Direction::Horizontal,
-            (self.target_tree.clone(), Linebreak::new(Direction::Vertical), panel),
+            (
+                self.target_tree.clone(),
+                Linebreak::new(Direction::Vertical),
+                panel,
+            ),
         );
 
         Ok(vec![display!(axis)])

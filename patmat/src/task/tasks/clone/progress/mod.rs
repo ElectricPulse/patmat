@@ -106,60 +106,63 @@ impl Widget_trait for Clone_progress_widget {
     async fn layout(
         &mut self,
         Layout_input {
-            render,
+            relayout,
             theme,
             slots,
             ..
         }: Layout_input<'_>,
     ) -> Result<Children> {
-        let progress = self.progress.affect(render.clone()).await?;
+        let progress = self.progress.affect(relayout.clone()).await?;
         let mut title = Text::new("Cloning repository");
         title
             .style
-            .set(theme.affect(render).await?.specific.text.subtitle);
+            .set(theme.affect(relayout).await?.specific.text.subtitle);
         let title_widget = Anchor::left(title);
 
         let content = match &*progress {
-            Clone_progress::Starting => {
-                Axis::new(
-                    Direction::Vertical,
-                    (title_widget, Anchor::left(Text::new("0%")), Progress_bar::new(0.0)),
-                )
-            }
-            Clone_progress::Running(rows) if rows.is_empty() => {
-                Axis::new(
-                    Direction::Vertical,
-                    (title_widget, Anchor::left(Text::new("0%")), Progress_bar::new(0.0)),
-                )
-            }
+            Clone_progress::Starting => Axis::new(
+                Direction::Vertical,
+                (
+                    title_widget,
+                    Anchor::left(Text::new("0%")),
+                    Progress_bar::new(0.0),
+                ),
+            ),
+            Clone_progress::Running(rows) if rows.is_empty() => Axis::new(
+                Direction::Vertical,
+                (
+                    title_widget,
+                    Anchor::left(Text::new("0%")),
+                    Progress_bar::new(0.0),
+                ),
+            ),
             Clone_progress::Running(rows) => {
                 let mut children: Vec<Widget> = vec![title_widget.as_any()];
                 for row in rows {
-                    children.push(Anchor::left(Text::new(format!(
-                        "{}: {}",
-                        row.name, row.value
-                    ))).as_any());
+                    children.push(
+                        Anchor::left(Text::new(format!("{}: {}", row.name, row.value))).as_any(),
+                    );
                     if let Some(fraction) = row.fraction {
                         children.push(Progress_bar::new(fraction).as_any());
                     }
                 }
                 Axis::new(Direction::Vertical, children)
             }
-            Clone_progress::Complete => {
-                Axis::new(
-                    Direction::Vertical,
-                    (title_widget, Progress_bar::new(1.0), Anchor::left(Text::new("Clone complete"))),
-                )
-            }
-            Clone_progress::Failed(error) => {
-                Axis::new(
-                    Direction::Vertical,
-                    (title_widget, Anchor::left(Text::new(format!(
-                        "Clone failed: {}",
-                        single_line(error)
-                    )))),
-                )
-            }
+            Clone_progress::Complete => Axis::new(
+                Direction::Vertical,
+                (
+                    title_widget,
+                    Progress_bar::new(1.0),
+                    Anchor::left(Text::new("Clone complete")),
+                ),
+            ),
+            Clone_progress::Failed(error) => Axis::new(
+                Direction::Vertical,
+                (
+                    title_widget,
+                    Anchor::left(Text::new(format!("Clone failed: {}", single_line(error)))),
+                ),
+            ),
         };
 
         Ok(vec![display!(Paper::new(content))])
@@ -184,9 +187,7 @@ impl Widget_trait for Progress_bar {
     async fn layout(
         &mut self,
         Layout_input {
-            hitbox,
-            problem,
-            ..
+            hitbox, problem, ..
         }: Layout_input<'_>,
     ) -> Result<Children> {
         problem
@@ -203,14 +204,14 @@ impl Widget_trait for Progress_bar {
     async fn render(
         &mut self,
         Render_input {
-            render,
+            rerender,
             theme,
             hitbox,
             scene,
             ..
         }: Render_input<'_, '_>,
     ) -> Result<()> {
-        let theme = theme.affect(render).await?;
+        let theme = theme.affect(rerender).await?;
         let radius = hitbox.size.height / 2.0;
         scene.fill_rounded_rect(hitbox, theme.semantic.border, radius);
 
