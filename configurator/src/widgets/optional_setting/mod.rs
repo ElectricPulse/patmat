@@ -6,15 +6,15 @@ use vizual::geometry::Direction;
 use vizual::{
     Signal,
     component::Children,
-    handlers::Retrieve_handler,
-    state::{Constant, Read_guard, State, State_trait},
-    sync::Thread_safe,
+    handlers::RetrieveHandler,
+    state::{Constant, ReadGuard, State, StateTrait},
+    sync::ThreadSafe,
     widget::{
-        Layout_input, Widget_trait,
-        custom_widget::Custom_widget_trait,
+        LayoutInput, WidgetTrait,
+        custom_widget::CustomWidgetTrait,
         widgets::{
             layout::axis::Axis,
-            menu::{Menu, Menu_item},
+            menu::{Menu, MenuItem},
             positioning::anchor::Anchor,
             text::Text,
         },
@@ -25,48 +25,48 @@ use vizual_macros::display;
 use crate::Field;
 
 #[derive(Clone)]
-struct Some_state<Value: Thread_safe>(State<Value>);
+struct SomeState<Value: ThreadSafe>(State<Value>);
 
 #[async_trait]
-impl<Value: Thread_safe + Clone> State_trait for Some_state<Value> {
+impl<Value: ThreadSafe + Clone> StateTrait for SomeState<Value> {
     type Output = Option<Value>;
 
-    async fn read(&self) -> Result<Read_guard<Self::Output>> {
+    async fn read(&self) -> Result<ReadGuard<Self::Output>> {
         let guard = self.0.read().await?;
-        Ok(Read_guard::new(Arc::new(Some((*guard).clone()))))
+        Ok(ReadGuard::new(Arc::new(Some((*guard).clone()))))
     }
 
-    async fn affect(&self, signal: Signal) -> Result<Read_guard<Self::Output>> {
+    async fn affect(&self, signal: Signal) -> Result<ReadGuard<Self::Output>> {
         let guard = self.0.affect(signal).await?;
-        Ok(Read_guard::new(Arc::new(Some((*guard).clone()))))
+        Ok(ReadGuard::new(Arc::new(Some((*guard).clone()))))
     }
 }
 
 #[derive_where(Clone)]
-struct Default_leaf_value<Value: Thread_safe> {
+struct DefaultLeafValue<Value: ThreadSafe> {
     label: String,
     value: PhantomData<Value>,
 }
 
 #[async_trait]
-impl<Value: Thread_safe> Retrieve_handler<Option<Value>> for Default_leaf_value<Value> {
+impl<Value: ThreadSafe> RetrieveHandler<Option<Value>> for DefaultLeafValue<Value> {
     async fn on_retrieve(&mut self) -> Result<State<Option<Value>>> {
         Ok(Constant::from(None).into())
     }
 }
 
 #[async_trait]
-impl<Value: Thread_safe> Custom_widget_trait for Default_leaf_value<Value> {
+impl<Value: ThreadSafe> CustomWidgetTrait for DefaultLeafValue<Value> {
     type Payload = bool;
 
     async fn layout(
         &mut self,
-        Layout_input {
+        LayoutInput {
             relayout,
             theme,
             slots,
             ..
-        }: Layout_input<'_>,
+        }: LayoutInput<'_>,
         selected: bool,
     ) -> Result<Children> {
         let theme = theme.affect(relayout).await?;
@@ -82,30 +82,30 @@ impl<Value: Thread_safe> Custom_widget_trait for Default_leaf_value<Value> {
 }
 
 #[derive_where(Clone)]
-struct Custom_leaf_value<Value: Thread_safe> {
+struct CustomLeafValue<Value: ThreadSafe> {
     field: Box<dyn Field<Value>>,
 }
 
 #[async_trait]
-impl<Value: Thread_safe + Clone> Retrieve_handler<Option<Value>> for Custom_leaf_value<Value> {
+impl<Value: ThreadSafe + Clone> RetrieveHandler<Option<Value>> for CustomLeafValue<Value> {
     async fn on_retrieve(&mut self) -> Result<State<Option<Value>>> {
         let inner_state = self.field.on_retrieve().await?;
-        Ok(Box::new(Some_state(inner_state)))
+        Ok(Box::new(SomeState(inner_state)))
     }
 }
 
 #[async_trait]
-impl<Value: Thread_safe> Custom_widget_trait for Custom_leaf_value<Value> {
+impl<Value: ThreadSafe> CustomWidgetTrait for CustomLeafValue<Value> {
     type Payload = bool;
 
     async fn layout(
         &mut self,
-        Layout_input {
+        LayoutInput {
             relayout,
             theme,
             slots,
             ..
-        }: Layout_input<'_>,
+        }: LayoutInput<'_>,
         selected: bool,
     ) -> Result<Children> {
         let theme = theme.affect(relayout).await?;
@@ -130,21 +130,21 @@ impl<Value: Thread_safe> Custom_widget_trait for Custom_leaf_value<Value> {
 }
 
 #[derive_where(Clone)]
-pub struct Optional_setting<Value: Clone + Thread_safe> {
+pub struct OptionalSetting<Value: Clone + ThreadSafe> {
     menu: Menu<Option<Value>>,
 }
 
-impl<Value: Clone + Thread_safe> Optional_setting<Value> {
+impl<Value: Clone + ThreadSafe> OptionalSetting<Value> {
     pub async fn new(
         default_value: impl Into<String>,
         is_default: bool,
         field: impl Field<Value> + 'static,
     ) -> Result<Self> {
-        let default_item: Menu_item<Option<Value>> = Box::new(Default_leaf_value {
+        let default_item: MenuItem<Option<Value>> = Box::new(DefaultLeafValue {
             label: default_value.into(),
             value: PhantomData,
         });
-        let custom_item: Menu_item<Option<Value>> = Box::new(Custom_leaf_value {
+        let custom_item: MenuItem<Option<Value>> = Box::new(CustomLeafValue {
             field: Box::new(field),
         });
         let items = vec![default_item, custom_item];
@@ -159,14 +159,14 @@ impl<Value: Clone + Thread_safe> Optional_setting<Value> {
 }
 
 #[async_trait]
-impl<Value: Clone + Thread_safe> Widget_trait for Optional_setting<Value> {
-    async fn layout(&mut self, Layout_input { slots, .. }: Layout_input<'_>) -> Result<Children> {
+impl<Value: Clone + ThreadSafe> WidgetTrait for OptionalSetting<Value> {
+    async fn layout(&mut self, LayoutInput { slots, .. }: LayoutInput<'_>) -> Result<Children> {
         Ok(vec![display!(self.menu.clone())])
     }
 }
 
 #[async_trait]
-impl<Value: Clone + Thread_safe> Retrieve_handler<Option<Value>> for Optional_setting<Value> {
+impl<Value: Clone + ThreadSafe> RetrieveHandler<Option<Value>> for OptionalSetting<Value> {
     async fn on_retrieve(&mut self) -> Result<State<Option<Value>>> {
         self.menu.on_retrieve().await
     }

@@ -13,45 +13,45 @@ use vizual::{
 #[derive(Clone)]
 pub enum Status {
     Built,
-    Already_built,
+    AlreadyBuilt,
 }
 
-pub type Task_result<Output = ()> = Result<(Output, Status)>;
+pub type TaskResult<Output = ()> = Result<(Output, Status)>;
 
 #[async_trait]
-pub trait Task_trait: Send + Sync {
+pub trait TaskTrait: Send + Sync {
     type Output: Send;
     async fn init(&self, _path: Store<Option<PathBuf>>) -> Result<()> {
         Ok(())
     }
-    async fn run(&self, widget: Store<Option<Widget>>) -> Task_result<Self::Output>;
+    async fn run(&self, widget: Store<Option<Widget>>) -> TaskResult<Self::Output>;
 }
 
 #[derive(Clone)]
 pub struct Task<Output: Send = ()> {
-    pub(crate) task: Arc<Mutex<dyn Task_trait<Output = Output>>>,
+    pub(crate) task: Arc<Mutex<dyn TaskTrait<Output = Output>>>,
 }
 
-struct Closure_task<F, Output> {
+struct ClosureTask<F, Output> {
     func: F,
     _marker: std::marker::PhantomData<fn() -> Output>,
 }
 
 #[async_trait]
-impl<F, Fut, Output: Send + Sync + 'static> Task_trait for Closure_task<F, Output>
+impl<F, Fut, Output: Send + Sync + 'static> TaskTrait for ClosureTask<F, Output>
 where
     F: Fn(Store<Option<Widget>>) -> Fut + Send + Sync + 'static,
-    Fut: std::future::Future<Output = Task_result<Output>> + Send + 'static,
+    Fut: std::future::Future<Output = TaskResult<Output>> + Send + 'static,
 {
     type Output = Output;
 
-    async fn run(&self, widget: Store<Option<Widget>>) -> Task_result<Self::Output> {
+    async fn run(&self, widget: Store<Option<Widget>>) -> TaskResult<Self::Output> {
         (self.func)(widget).await
     }
 }
 
 impl<Output: Send + Sync + 'static> Task<Output> {
-    pub fn new(task: impl Task_trait<Output = Output> + 'static) -> Self {
+    pub fn new(task: impl TaskTrait<Output = Output> + 'static) -> Self {
         Self {
             task: Arc::new(Mutex::new(task)),
         }
@@ -60,9 +60,9 @@ impl<Output: Send + Sync + 'static> Task<Output> {
     pub fn from_fn<F, Fut>(f: F) -> Self
     where
         F: Fn(Store<Option<Widget>>) -> Fut + Send + Sync + 'static,
-        Fut: std::future::Future<Output = Task_result<Output>> + Send + 'static,
+        Fut: std::future::Future<Output = TaskResult<Output>> + Send + 'static,
     {
-        Self::new(Closure_task {
+        Self::new(ClosureTask {
             func: f,
             _marker: std::marker::PhantomData,
         })

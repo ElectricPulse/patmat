@@ -1,20 +1,20 @@
 use async_trait::async_trait;
 use color_eyre::Result;
 use derive_new::new;
-use lucide_icons::Icon as Lucide_icon;
+use lucide_icons::Icon as LucideIcon;
 use std::path::PathBuf;
 use vizual::{
     component::Children,
     geometry::Direction,
-    handlers::Retrieve_handler,
+    handlers::RetrieveHandler,
     state::{State, Store},
     widget::{
-        Layout_input, Widget_trait,
-        custom_widget::Custom_widget_trait,
+        LayoutInput, WidgetTrait,
+        custom_widget::CustomWidgetTrait,
         widgets::{
             icon::Icon,
             layout::axis::Axis,
-            menu::{Menu, Menu_item},
+            menu::{Menu, MenuItem},
             positioning::anchor::Anchor,
             text::Text,
         },
@@ -26,30 +26,30 @@ use crate::target::{Dependencies, Dependency};
 use crate::utils::{display_target_path, get_targets};
 
 #[derive(Clone, new)]
-struct Target_tree_item {
+struct TargetTreeItem {
     target: Dependency,
     working_directory: PathBuf,
 }
 
 #[async_trait::async_trait]
-impl Retrieve_handler<Dependency> for Target_tree_item {
+impl RetrieveHandler<Dependency> for TargetTreeItem {
     async fn on_retrieve(&mut self) -> Result<State<Dependency>> {
         Ok(self.target.clone().into())
     }
 }
 
 #[async_trait::async_trait]
-impl Custom_widget_trait for Target_tree_item {
+impl CustomWidgetTrait for TargetTreeItem {
     type Payload = bool;
 
     async fn layout(
         &mut self,
-        Layout_input {
+        LayoutInput {
             relayout,
             theme,
             slots,
             ..
-        }: Layout_input<'_>,
+        }: LayoutInput<'_>,
         selected: bool,
     ) -> Result<Children> {
         let theme = theme.affect(relayout.clone()).await?;
@@ -74,7 +74,7 @@ impl Custom_widget_trait for Target_tree_item {
                 let mut path_style = theme.specific.text.paragraph;
                 path_style.color = theme.semantic.text.muted;
                 path_text.style.set(path_style);
-                let mut folder_icon = Icon::new(Lucide_icon::Folder);
+                let mut folder_icon = Icon::new(LucideIcon::Folder);
                 folder_icon.style.set(path_style);
                 let path_row = Axis::new(
                     Direction::Horizontal,
@@ -94,14 +94,14 @@ impl Custom_widget_trait for Target_tree_item {
 }
 
 #[derive(Clone)]
-pub struct Target_tree {
+pub struct TargetTree {
     dependencies: Dependencies,
     selected: Store<Dependency>,
     selected_index: Store<usize>,
     working_directory: PathBuf,
 }
 
-impl Target_tree {
+impl TargetTree {
     pub fn new(
         dependencies: Dependencies,
         selected: Store<Dependency>,
@@ -117,18 +117,18 @@ impl Target_tree {
 }
 
 #[async_trait]
-impl Widget_trait for Target_tree {
+impl WidgetTrait for TargetTree {
     async fn layout(
         &mut self,
-        Layout_input {
+        LayoutInput {
             relayout, slots, ..
-        }: Layout_input<'_>,
+        }: LayoutInput<'_>,
     ) -> Result<Children> {
         let targets = get_targets(&self.dependencies, relayout.clone())
             .await?
             .into_iter()
-            .map(|target| -> Menu_item<Dependency> {
-                Box::new(Target_tree_item::new(
+            .map(|target| -> MenuItem<Dependency> {
+                Box::new(TargetTreeItem::new(
                     target,
                     self.working_directory.clone(),
                 ))

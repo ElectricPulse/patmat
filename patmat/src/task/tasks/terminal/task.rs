@@ -1,7 +1,7 @@
 use crate::task;
 use vizual::{
     state::Store,
-    widget::{Widget, Widget_trait, widgets::terminal::Terminal},
+    widget::{Widget, WidgetTrait, widgets::terminal::Terminal},
 };
 
 use async_trait::async_trait;
@@ -58,7 +58,7 @@ impl Task {
 }
 
 #[async_trait]
-impl task::Task_trait for Task {
+impl task::TaskTrait for Task {
     type Output = ();
 
     async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
@@ -68,7 +68,7 @@ impl task::Task_trait for Task {
         Ok(())
     }
 
-    async fn run(&self, widget: Store<Option<Widget>>) -> task::Task_result {
+    async fn run(&self, widget: Store<Option<Widget>>) -> task::TaskResult {
         let terminal = match &self.terminal {
             Some(terminal) => terminal.clone(),
             None => Terminal::new().await,

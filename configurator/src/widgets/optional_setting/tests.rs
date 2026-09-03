@@ -3,7 +3,7 @@ use super::*;
 #[tokio::test]
 async fn default_returns_none() -> Result<()> {
     let submenu = Menu::text(vec!["One".into(), "Two".into()], 0).await?;
-    let mut setting = Optional_setting::new("DefaultOption", true, submenu).await?;
+    let mut setting = OptionalSetting::new("DefaultOption", true, submenu).await?;
 
     let state = setting.on_retrieve().await?;
     let value = state.read().await?;
@@ -14,7 +14,7 @@ async fn default_returns_none() -> Result<()> {
 #[tokio::test]
 async fn custom_returns_selected_submenu_value() -> Result<()> {
     let submenu = Menu::text(vec!["One".into(), "Two".into()], 0).await?;
-    let mut setting = Optional_setting::new("DefaultOption", false, submenu).await?;
+    let mut setting = OptionalSetting::new("DefaultOption", false, submenu).await?;
 
     let state = setting.on_retrieve().await?;
     let value = state.read().await?;
@@ -25,7 +25,7 @@ async fn custom_returns_selected_submenu_value() -> Result<()> {
 #[tokio::test]
 async fn changing_submenu_updates_optional_setting_state() -> Result<()> {
     let mut submenu = Menu::text(vec!["One".into(), "Two".into()], 0).await?;
-    let mut setting = Optional_setting::new("DefaultOption", false, submenu.clone()).await?;
+    let mut setting = OptionalSetting::new("DefaultOption", false, submenu.clone()).await?;
 
     let state = setting.on_retrieve().await?;
     assert_eq!(*state.read().await?, Some("One".to_string()));
@@ -38,7 +38,7 @@ async fn changing_submenu_updates_optional_setting_state() -> Result<()> {
 #[tokio::test]
 async fn switching_between_default_and_custom() -> Result<()> {
     let submenu = Menu::text(vec!["One".into(), "Two".into()], 1).await?;
-    let mut setting = Optional_setting::new("DefaultOption", true, submenu).await?;
+    let mut setting = OptionalSetting::new("DefaultOption", true, submenu).await?;
 
     let state = setting.on_retrieve().await?;
     assert_eq!(*state.read().await?, None);

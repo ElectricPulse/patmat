@@ -1,4 +1,4 @@
-use super::progress::{Clone_progress, Clone_progress_widget};
+use super::progress::{CloneProgress, CloneProgressWidget};
 use crate::task;
 
 use async_trait::async_trait;
@@ -10,7 +10,7 @@ use std::{
 };
 use vizual::{
     state::Store,
-    widget::{Widget, Widget_trait, widgets::positioning::anchor::Anchor},
+    widget::{Widget, WidgetTrait, widgets::positioning::anchor::Anchor},
 };
 
 #[cfg(test)]
@@ -20,7 +20,7 @@ mod tests;
 pub(super) struct Task {
     pub(super) path: PathBuf,
     pub(super) remote_path: String,
-    progress: Store<Clone_progress>,
+    progress: Store<CloneProgress>,
 }
 
 impl Task {
@@ -28,17 +28,17 @@ impl Task {
         Self {
             path,
             remote_path,
-            progress: Store::new(Clone_progress::Starting),
+            progress: Store::new(CloneProgress::Starting),
         }
     }
 
-    pub(super) fn widget(&self) -> Clone_progress_widget {
-        Clone_progress_widget::new(self.progress.clone())
+    pub(super) fn widget(&self) -> CloneProgressWidget {
+        CloneProgressWidget::new(self.progress.clone())
     }
 }
 
 #[async_trait]
-impl task::Task_trait for Task {
+impl task::TaskTrait for Task {
     type Output = ();
 
     async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
@@ -46,7 +46,7 @@ impl task::Task_trait for Task {
         Ok(())
     }
 
-    async fn run(&self, widget: Store<Option<Widget>>) -> task::Task_result {
+    async fn run(&self, widget: Store<Option<Widget>>) -> task::TaskResult {
         widget.set(Some(Anchor::middle(self.widget()).as_any())).await?;
 
         let git_dir = self.path.join(".git");
@@ -55,11 +55,11 @@ impl task::Task_trait for Task {
             .try_exists()
             .wrap_err_with(|| format!("Failed to inspect {}", git_dir.display()))?;
         if git_directory_exists && git_dir.is_dir() {
-            self.progress.set(Clone_progress::Complete).await?;
-            return Ok(((), task::Status::Already_built));
+            self.progress.set(CloneProgress::Complete).await?;
+            return Ok(((), task::Status::AlreadyBuilt));
         }
 
-        self.progress.set(Clone_progress::Starting).await?;
+        self.progress.set(CloneProgress::Starting).await?;
 
         let progress = gix::progress::tree::Root::new();
         let worker_progress = Arc::clone(&progress);
@@ -78,7 +78,7 @@ impl task::Task_trait for Task {
                     break result.wrap_err("The gix clone worker stopped unexpectedly")?;
                 }
                 _ = refresh.tick() => {
-                    let snapshot = Clone_progress::from_tree(&progress);
+                    let snapshot = CloneProgress::from_tree(&progress);
                     if *self.progress.read().await? != snapshot {
                         self.progress.set(snapshot).await?;
                     }
@@ -88,12 +88,12 @@ impl task::Task_trait for Task {
 
         match result {
             Ok(()) => {
-                self.progress.set(Clone_progress::Complete).await?;
+                self.progress.set(CloneProgress::Complete).await?;
                 Ok(((), task::Status::Built))
             }
             Err(error) => {
                 self.progress
-                    .set(Clone_progress::Failed(format!("{error:#}")))
+                    .set(CloneProgress::Failed(format!("{error:#}")))
                     .await?;
                 Err(error)
             }

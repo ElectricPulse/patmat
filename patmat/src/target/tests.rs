@@ -1,21 +1,21 @@
 use super::*;
-use crate::task::{Status, Task_result, Task_trait};
+use crate::task::{Status, TaskResult, TaskTrait};
 
-struct Empty_task;
+struct EmptyTask;
 
 #[async_trait]
-impl Task_trait for Empty_task {
+impl TaskTrait for EmptyTask {
     type Output = ();
 
-    async fn run(&self, _widget: Store<Option<Widget>>) -> Task_result<Self::Output> {
+    async fn run(&self, _widget: Store<Option<Widget>>) -> TaskResult<Self::Output> {
         Ok(((), Status::Built))
     }
 }
 
-struct Path_task(PathBuf);
+struct PathTask(PathBuf);
 
 #[async_trait]
-impl Task_trait for Path_task {
+impl TaskTrait for PathTask {
     type Output = ();
 
     async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
@@ -23,14 +23,14 @@ impl Task_trait for Path_task {
         Ok(())
     }
 
-    async fn run(&self, _widget: Store<Option<Widget>>) -> Task_result<Self::Output> {
+    async fn run(&self, _widget: Store<Option<Widget>>) -> TaskResult<Self::Output> {
         Ok(((), Status::Built))
     }
 }
 
 #[tokio::test]
 async fn metadata_clones_share_each_store() -> Result<()> {
-    let target = Target::new_independent("before", Task::new(Empty_task));
+    let target = Target::new_independent("before", Task::new(EmptyTask));
     let metadata = target.get_metadata();
 
     metadata.name.set("after".to_owned()).await?;
@@ -47,7 +47,7 @@ async fn metadata_clones_share_each_store() -> Result<()> {
 
 #[tokio::test]
 async fn task_init_sets_target_path() -> Result<()> {
-    let target = Target::new_independent("with_path", Task::new(Path_task(PathBuf::from("/test/path"))));
+    let target = Target::new_independent("with_path", Task::new(PathTask(PathBuf::from("/test/path"))));
     tokio::time::sleep(std::time::Duration::from_millis(20)).await;
     let metadata = target.get_metadata();
     assert_eq!(

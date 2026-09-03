@@ -9,13 +9,13 @@ use std::path::{Path, PathBuf};
 use vizual::{state::Store, widget::Widget};
 
 #[derive(Clone)]
-pub(super) struct Copy_file_task {
+pub(super) struct CopyFileTask {
     pub(super) source: PathBuf,
     pub(super) destination: PathBuf,
 }
 
 #[async_trait]
-impl task::Task_trait for Copy_file_task {
+impl task::TaskTrait for CopyFileTask {
     type Output = ();
 
     async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
@@ -23,7 +23,7 @@ impl task::Task_trait for Copy_file_task {
         Ok(())
     }
 
-    async fn run(&self, _widget: Store<Option<Widget>>) -> task::Task_result {
+    async fn run(&self, _widget: Store<Option<Widget>>) -> task::TaskResult {
         let _ = tokio::fs::copy(&self.source, &self.destination)
             .await
             .wrap_err(format!(
@@ -36,13 +36,13 @@ impl task::Task_trait for Copy_file_task {
 }
 
 #[derive(Clone)]
-pub(super) struct Copy_dir_task {
+pub(super) struct CopyDirTask {
     pub(super) source: PathBuf,
     pub(super) destination: PathBuf,
 }
 
 #[async_trait]
-impl task::Task_trait for Copy_dir_task {
+impl task::TaskTrait for CopyDirTask {
     type Output = ();
 
     async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
@@ -50,13 +50,13 @@ impl task::Task_trait for Copy_dir_task {
         Ok(())
     }
 
-    async fn run(&self, _widget: Store<Option<Widget>>) -> task::Task_result {
+    async fn run(&self, _widget: Store<Option<Widget>>) -> task::TaskResult {
         // Check if dest already exists
         if self.destination.exists()
             && let Some(content) = self.destination.read_dir()?.next()
         {
             let _ = content?;
-            return Ok(((), task::Status::Already_built));
+            return Ok(((), task::Status::AlreadyBuilt));
         }
 
         copy_dir_all(&self.source, &self.destination).wrap_err(format!(
@@ -83,12 +83,12 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> 
 }
 
 #[derive(Clone)]
-pub(super) struct Create_dir_task {
+pub(super) struct CreateDirTask {
     pub(super) path: PathBuf,
 }
 
 #[async_trait]
-impl task::Task_trait for Create_dir_task {
+impl task::TaskTrait for CreateDirTask {
     type Output = ();
 
     async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
@@ -96,9 +96,9 @@ impl task::Task_trait for Create_dir_task {
         Ok(())
     }
 
-    async fn run(&self, _widget: Store<Option<Widget>>) -> task::Task_result {
+    async fn run(&self, _widget: Store<Option<Widget>>) -> task::TaskResult {
         if self.path.exists() {
-            return Ok(((), task::Status::Already_built));
+            return Ok(((), task::Status::AlreadyBuilt));
         }
 
         tokio::fs::create_dir_all(&self.path)
@@ -110,13 +110,13 @@ impl task::Task_trait for Create_dir_task {
 }
 
 #[derive(Clone)]
-pub(super) struct Write_file_task {
+pub(super) struct WriteFileTask {
     pub(super) path: PathBuf,
     pub(super) content: String,
 }
 
 #[async_trait]
-impl task::Task_trait for Write_file_task {
+impl task::TaskTrait for WriteFileTask {
     type Output = ();
 
     async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
@@ -124,13 +124,13 @@ impl task::Task_trait for Write_file_task {
         Ok(())
     }
 
-    async fn run(&self, _widget: Store<Option<Widget>>) -> task::Task_result {
+    async fn run(&self, _widget: Store<Option<Widget>>) -> task::TaskResult {
         // Check if file exists with same content
         if self.path.exists()
             && let Ok(existing_content) = tokio::fs::read_to_string(&self.path).await
             && existing_content == self.content
         {
-            return Ok(((), task::Status::Already_built));
+            return Ok(((), task::Status::AlreadyBuilt));
         }
 
         // Ensure parent directory exists
@@ -149,13 +149,13 @@ impl task::Task_trait for Write_file_task {
 }
 
 #[derive(Clone)]
-pub(super) struct Create_directory_task {
+pub(super) struct CreateDirectoryTask {
     pub(super) path: PathBuf,
     pub(super) subdirs: Vec<String>,
 }
 
 #[async_trait]
-impl task::Task_trait for Create_directory_task {
+impl task::TaskTrait for CreateDirectoryTask {
     type Output = PathBuf;
 
     async fn init(&self, path: Store<Option<PathBuf>>) -> Result<()> {
@@ -163,9 +163,9 @@ impl task::Task_trait for Create_directory_task {
         Ok(())
     }
 
-    async fn run(&self, _widget: Store<Option<Widget>>) -> task::Task_result<PathBuf> {
+    async fn run(&self, _widget: Store<Option<Widget>>) -> task::TaskResult<PathBuf> {
         if self.path.exists() {
-            return Ok((self.path.clone(), task::Status::Already_built));
+            return Ok((self.path.clone(), task::Status::AlreadyBuilt));
         }
 
         tokio::fs::create_dir_all(&self.path)

@@ -5,16 +5,16 @@ use async_trait::async_trait;
 use vizual::{state::Store, widget::Widget};
 
 #[derive(Clone, Copy)]
-struct Require_task {}
+struct RequireTask {}
 
 #[async_trait]
-impl task::Task_trait for Require_task {
+impl task::TaskTrait for RequireTask {
     type Output = ();
-    async fn run(&self, _widget: Store<Option<Widget>>) -> task::Task_result {
+    async fn run(&self, _widget: Store<Option<Widget>>) -> task::TaskResult {
         Ok(((), Status::Built))
     }
 }
 
 pub fn new() -> Task<()> {
-    Task::new(Require_task {})
+    Task::new(RequireTask {})
 }

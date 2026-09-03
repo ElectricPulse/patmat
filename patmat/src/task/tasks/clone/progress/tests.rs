@@ -7,7 +7,7 @@ fn snapshots_bounded_gix_progress() {
     item.init(Some(20), gix::progress::count("objects"));
     item.set(5);
 
-    let Clone_progress::Running(rows) = Clone_progress::from_tree(&tree) else {
+    let CloneProgress::Running(rows) = CloneProgress::from_tree(&tree) else {
         panic!("a live gix task should produce running progress");
     };
     assert_eq!(rows.len(), 1);

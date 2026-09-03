@@ -6,7 +6,7 @@ use vizual::{
     geometry::{Direction, Rect},
     state::Store,
     widget::{
-        Layout_input, Render_input, Widget, Widget_trait,
+        LayoutInput, RenderInput, Widget, WidgetTrait,
         widgets::{layout::axis::Axis, paper::Paper, positioning::anchor::Anchor, text::Text},
     },
 };
@@ -21,21 +21,21 @@ const MINIMUM_BAR_WIDTH: f64 = 360.0;
 const BAR_HEIGHT: f64 = 12.0;
 
 #[derive(Clone, Debug, PartialEq)]
-pub(super) enum Clone_progress {
+pub(super) enum CloneProgress {
     Starting,
-    Running(Vec<Progress_row>),
+    Running(Vec<ProgressRow>),
     Complete,
     Failed(String),
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub(super) struct Progress_row {
+pub(super) struct ProgressRow {
     name: String,
     value: String,
     fraction: Option<f64>,
 }
 
-impl Clone_progress {
+impl CloneProgress {
     pub(super) fn from_tree(tree: &Arc<gix::progress::tree::Root>) -> Self {
         let mut tasks = Vec::new();
         tree.sorted_snapshot(&mut tasks);
@@ -57,7 +57,7 @@ impl Clone_progress {
                     .filter(|maximum| *maximum > 0)
                     .map(|maximum| (step as f64 / maximum as f64).clamp(0.0, 1.0));
 
-                Some(Progress_row {
+                Some(ProgressRow {
                     name: single_line(&task.name),
                     value,
                     fraction,
@@ -91,26 +91,26 @@ fn single_line(value: &str) -> String {
 }
 
 #[derive(Clone)]
-pub(crate) struct Clone_progress_widget {
-    progress: Store<Clone_progress>,
+pub(crate) struct CloneProgressWidget {
+    progress: Store<CloneProgress>,
 }
 
-impl Clone_progress_widget {
-    pub(super) fn new(progress: Store<Clone_progress>) -> Self {
+impl CloneProgressWidget {
+    pub(super) fn new(progress: Store<CloneProgress>) -> Self {
         Self { progress }
     }
 }
 
 #[async_trait]
-impl Widget_trait for Clone_progress_widget {
+impl WidgetTrait for CloneProgressWidget {
     async fn layout(
         &mut self,
-        Layout_input {
+        LayoutInput {
             relayout,
             theme,
             slots,
             ..
-        }: Layout_input<'_>,
+        }: LayoutInput<'_>,
     ) -> Result<Children> {
         let progress = self.progress.affect(relayout.clone()).await?;
         let mut title = Text::new("Cloning repository");
@@ -120,43 +120,43 @@ impl Widget_trait for Clone_progress_widget {
         let title_widget = Anchor::left(title);
 
         let content = match &*progress {
-            Clone_progress::Starting => Axis::new(
+            CloneProgress::Starting => Axis::new(
                 Direction::Vertical,
                 (
                     title_widget,
                     Anchor::left(Text::new("0%")),
-                    Progress_bar::new(0.0),
+                    ProgressBar::new(0.0),
                 ),
             ),
-            Clone_progress::Running(rows) if rows.is_empty() => Axis::new(
+            CloneProgress::Running(rows) if rows.is_empty() => Axis::new(
                 Direction::Vertical,
                 (
                     title_widget,
                     Anchor::left(Text::new("0%")),
-                    Progress_bar::new(0.0),
+                    ProgressBar::new(0.0),
                 ),
             ),
-            Clone_progress::Running(rows) => {
+            CloneProgress::Running(rows) => {
                 let mut children: Vec<Widget> = vec![title_widget.as_any()];
                 for row in rows {
                     children.push(
                         Anchor::left(Text::new(format!("{}: {}", row.name, row.value))).as_any(),
                     );
                     if let Some(fraction) = row.fraction {
-                        children.push(Progress_bar::new(fraction).as_any());
+                        children.push(ProgressBar::new(fraction).as_any());
                     }
                 }
                 Axis::new(Direction::Vertical, children)
             }
-            Clone_progress::Complete => Axis::new(
+            CloneProgress::Complete => Axis::new(
                 Direction::Vertical,
                 (
                     title_widget,
-                    Progress_bar::new(1.0),
+                    ProgressBar::new(1.0),
                     Anchor::left(Text::new("Clone complete")),
                 ),
             ),
-            Clone_progress::Failed(error) => Axis::new(
+            CloneProgress::Failed(error) => Axis::new(
                 Direction::Vertical,
                 (
                     title_widget,
@@ -170,11 +170,11 @@ impl Widget_trait for Clone_progress_widget {
 }
 
 #[derive(Clone, Copy)]
-struct Progress_bar {
+struct ProgressBar {
     fraction: f64,
 }
 
-impl Progress_bar {
+impl ProgressBar {
     fn new(fraction: f64) -> Self {
         Self {
             fraction: fraction.clamp(0.0, 1.0),
@@ -183,12 +183,12 @@ impl Progress_bar {
 }
 
 #[async_trait]
-impl Widget_trait for Progress_bar {
+impl WidgetTrait for ProgressBar {
     async fn layout(
         &mut self,
-        Layout_input {
+        LayoutInput {
             hitbox, problem, ..
-        }: Layout_input<'_>,
+        }: LayoutInput<'_>,
     ) -> Result<Children> {
         problem
             .constrain(vizual::constraint!(
@@ -203,13 +203,13 @@ impl Widget_trait for Progress_bar {
 
     async fn render(
         &mut self,
-        Render_input {
+        RenderInput {
             rerender,
             theme,
             hitbox,
             scene,
             ..
-        }: Render_input<'_, '_>,
+        }: RenderInput<'_, '_>,
     ) -> Result<()> {
         let theme = theme.affect(rerender).await?;
         let radius = hitbox.size.height / 2.0;

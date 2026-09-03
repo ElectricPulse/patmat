@@ -6,13 +6,13 @@ pub mod utils;
 pub use utils::normalize_path;
 
 use color_eyre::eyre::Result;
-use lucide_icons::Icon as Lucide_icon;
+use lucide_icons::Icon as LucideIcon;
 use std::path::{Path, PathBuf};
 use vizual_macros::display;
 
 use crate::{
-    target::{Dependencies, Dependency, status::Target_status},
-    ui::target_tree::Target_tree,
+    target::{Dependencies, Dependency, status::TargetStatus},
+    ui::target_tree::TargetTree,
     utils::display_target_path,
 };
 use vizual::{
@@ -21,7 +21,7 @@ use vizual::{
     geometry::Direction,
     state::Store,
     widget::{
-        Layout_input, Shared_widget, Widget_trait,
+        LayoutInput, SharedWidget, WidgetTrait,
         widgets::{
             icon::Icon, layout::axis::Axis, linebreak::Linebreak, paragraph::Paragraph,
             positioning::anchor::Anchor, scroll::Scroll, text::Text,
@@ -31,7 +31,7 @@ use vizual::{
 
 #[derive(Clone)]
 pub struct Builder {
-    target_tree: Shared_widget<Scroll>,
+    target_tree: SharedWidget<Scroll>,
     selected_dependency: Store<Dependency>,
     working_directory: PathBuf,
 }
@@ -62,7 +62,7 @@ pub fn new(dependencies: Dependencies, working_directory: PathBuf) -> Builder {
             .cloned()
             .expect("Dependencies must not be empty"),
     );
-    let target_tree = Target_tree::new(
+    let target_tree = TargetTree::new(
         dependencies,
         selected_dependency.clone(),
         working_directory.clone(),
@@ -77,15 +77,15 @@ pub fn new(dependencies: Dependencies, working_directory: PathBuf) -> Builder {
 }
 
 #[async_trait::async_trait]
-impl Widget_trait for Builder {
+impl WidgetTrait for Builder {
     async fn layout(
         &mut self,
-        Layout_input {
+        LayoutInput {
             relayout,
             theme,
             slots,
             ..
-        }: Layout_input<'_>,
+        }: LayoutInput<'_>,
     ) -> Result<Children> {
         let dependency = &*self.selected_dependency.affect(relayout.clone()).await?;
         let metadata = dependency.get_metadata();
@@ -119,7 +119,7 @@ impl Widget_trait for Builder {
         let path_item = Anchor::left(Axis::new(
             Direction::Horizontal,
             (
-                Anchor::v_middle(Icon::new(Lucide_icon::Folder)),
+                Anchor::v_middle(Icon::new(LucideIcon::Folder)),
                 Anchor::v_middle(path_label),
                 Anchor::v_middle(path_paragraph),
             ),
@@ -138,7 +138,7 @@ impl Widget_trait for Builder {
             ),
         ));
 
-        let metadata = if let Target_status::Error(error) = &status {
+        let metadata = if let TargetStatus::Error(error) = &status {
             let mut error_paragraph = Paragraph::new(Direction::Horizontal, theme.units.em * 25.0);
             error_paragraph.set_styled_content(format!("{error:#}"), theme.specific.text.paragraph);
             let mut error_title_label = Text::new("Error message:");
@@ -146,7 +146,7 @@ impl Widget_trait for Builder {
             let error_title = Anchor::left(Axis::new(
                 Direction::Horizontal,
                 (
-                    Anchor::v_middle(Icon::new(Lucide_icon::AlertCircle)),
+                    Anchor::v_middle(Icon::new(LucideIcon::AlertCircle)),
                     Anchor::v_middle(error_title_label),
                 ),
             ));

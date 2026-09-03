@@ -10,54 +10,54 @@ use std::{
     },
 };
 
-use crate::{target::status::Target_status, task::Task};
+use crate::{target::status::TargetStatus, task::Task};
 use color_eyre::eyre::{Result, eyre};
 use vizual::{
     state::Store,
-    sync::{Mutex, Thread_safe},
+    sync::{Mutex, ThreadSafe},
     widget::Widget,
 };
 
-pub trait Output_constraints: Thread_safe + Clone {}
-impl<T> Output_constraints for T where T: Thread_safe + Clone {}
+pub trait OutputConstraints: ThreadSafe + Clone {}
+impl<T> OutputConstraints for T where T: ThreadSafe + Clone {}
 
 static NEXT_TARGET_ID: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone)]
-pub struct Target_metadata {
+pub struct TargetMetadata {
     pub id: Store<u64>,
     pub name: Store<String>,
     /// This path is only used to show the user roughly where the task is working.
     pub path: Store<Option<PathBuf>>,
     pub dependencies: Store<Dependencies>,
-    pub status: Store<Target_status>,
+    pub status: Store<TargetStatus>,
 }
 
 #[async_trait]
 // Since Targets are clonable and aren't in an Arc, Target trait should also be clonable
-pub trait Target_trait: DynClone + Send + Sync {
-    fn get_metadata(&self) -> Target_metadata;
+pub trait TargetTrait: DynClone + Send + Sync {
+    fn get_metadata(&self) -> TargetMetadata;
     fn widget(&self) -> Store<Option<Widget>>;
     async fn ensure_ran(&self) -> Result<()>;
 }
 
-dyn_clone::clone_trait_object!(Target_trait);
+dyn_clone::clone_trait_object!(TargetTrait);
 
-pub type Dependency = Box<dyn Target_trait>;
+pub type Dependency = Box<dyn TargetTrait>;
 pub type Dependencies = Vec<Dependency>;
 
 // Target should not be returned from helper functions
 // only the task
 #[derive(Clone)]
-pub struct Target<Output: Output_constraints> {
-    metadata: Target_metadata,
+pub struct Target<Output: OutputConstraints> {
+    metadata: TargetMetadata,
     task: Task<Output>,
     widget: Store<Option<Widget>>,
     output: Arc<Mutex<Option<Output>>>,
 }
 
-impl<Output: Output_constraints> Target<Output> {
-    pub fn get_metadata(&self) -> Target_metadata {
+impl<Output: OutputConstraints> Target<Output> {
+    pub fn get_metadata(&self) -> TargetMetadata {
         self.metadata.clone()
     }
 
@@ -77,12 +77,12 @@ impl<Output: Output_constraints> Target<Output> {
         task: Task<Output>,
         dependencies: Dependencies,
     ) -> Self {
-        let metadata = Target_metadata {
+        let metadata = TargetMetadata {
             id: Store::new(NEXT_TARGET_ID.fetch_add(1, Ordering::Relaxed)),
             name: Store::new(name.into()),
             path: Store::new(None),
             dependencies: Store::new(dependencies),
-            status: Store::new(Target_status::Unsatisfied),
+            status: Store::new(TargetStatus::Unsatisfied),
         };
 
         let path_store = metadata.path.clone();
@@ -105,7 +105,7 @@ impl<Output: Output_constraints> Target<Output> {
             return Ok(output.clone());
         }
 
-        self.set_status(Target_status::Running_dependencies).await?;
+        self.set_status(TargetStatus::RunningDependencies).await?;
 
         let dependencies = self.metadata.dependencies.read().await?.clone();
 
@@ -113,7 +113,7 @@ impl<Output: Output_constraints> Target<Output> {
             dependency.ensure_ran().await?;
         }
 
-        self.set_status(Target_status::Running).await?;
+        self.set_status(TargetStatus::Running).await?;
 
         let result = self
             .task
@@ -126,33 +126,33 @@ impl<Output: Output_constraints> Target<Output> {
         let (output, status) = match result {
             Err(err) => {
                 let error_message = format!("{err:#}");
-                self.set_status(Target_status::Error(Arc::new(err))).await?;
+                self.set_status(TargetStatus::Error(Arc::new(err))).await?;
                 return Err(eyre!("{error_message}"));
             }
             Ok(result) => result,
         };
 
-        self.set_status(Target_status::Satisfied(status)).await?;
+        self.set_status(TargetStatus::Satisfied(status)).await?;
         *output_guard = Some(output.clone());
 
         Ok(output)
     }
 
-    async fn set_status(&self, status: Target_status) -> Result<()> {
+    async fn set_status(&self, status: TargetStatus) -> Result<()> {
         self.metadata.status.set(status).await?;
         Ok(())
     }
 }
 
-impl<Output: Output_constraints> From<Target<Output>> for Dependency {
+impl<Output: OutputConstraints> From<Target<Output>> for Dependency {
     fn from(target: Target<Output>) -> Self {
         Box::new(target)
     }
 }
 
 #[async_trait]
-impl<Output: Output_constraints> Target_trait for Target<Output> {
-    fn get_metadata(&self) -> Target_metadata {
+impl<Output: OutputConstraints> TargetTrait for Target<Output> {
+    fn get_metadata(&self) -> TargetMetadata {
         self.metadata.clone()
     }
 

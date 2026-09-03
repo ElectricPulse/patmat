@@ -14,75 +14,75 @@ use serde::Serialize;
 use vizual_macros::display;
 
 use vizual::{
-    Vizual_msg,
+    VizualMsg,
     component::Children,
     event::Event,
     geometry::Direction,
-    handlers::{Retrieve_handler, Submit_handler},
+    handlers::{RetrieveHandler, SubmitHandler},
     state::State,
-    sync::{Mutex, Thread_safe},
+    sync::{Mutex, ThreadSafe},
     widget::{
-        All_events, Key_press, Layout_input, Mouse_event, Other_event, Render_input, Widget,
-        Widget_trait,
-        custom_widget::Custom_widget_trait,
+        AllEvents, KeyPress, LayoutInput, MouseEvent, OtherEvent, RenderInput, Widget,
+        WidgetTrait,
+        custom_widget::CustomWidgetTrait,
         widgets::{
             button::Button,
             layout::{axis::Axis, grid::Grid},
             linebreak::Linebreak,
-            menu::{Menu, Menu_item},
+            menu::{Menu, MenuItem},
             positioning::{
-                anchor::{Anchor, Anchor_position, Anchors},
+                anchor::{Anchor, AnchorPosition, Anchors},
                 space::Space,
             },
             text::Text,
-            title_block::Title_block,
+            title_block::TitleBlock,
         },
     },
 };
 
 /// A configuration hierarchy capable of generating widgets and parsing output.
 #[async_trait]
-pub trait Tree: Thread_safe {
-    type Configuration: Serialize + Thread_safe + Clone;
+pub trait Tree: ThreadSafe {
+    type Configuration: Serialize + ThreadSafe + Clone;
 
-    fn get_tree(&self) -> Configuration_tree_branch;
+    fn get_tree(&self) -> ConfigurationTreeBranch;
     async fn create_config(&mut self) -> Result<Self::Configuration>;
 }
 
 #[async_trait]
 /// A widget field that can return a configured value.
-pub trait Field<Value: Thread_safe>: Widget_trait + Retrieve_handler<Value> {}
+pub trait Field<Value: ThreadSafe>: WidgetTrait + RetrieveHandler<Value> {}
 
-dyn_clone::clone_trait_object!(<Value> Field<Value> where Value: Thread_safe);
+dyn_clone::clone_trait_object!(<Value> Field<Value> where Value: ThreadSafe);
 
-impl<T, Value: Thread_safe> Field<Value> for T where
-    T: Widget_trait + Retrieve_handler<Value> + Clone + 'static
+impl<T, Value: ThreadSafe> Field<Value> for T where
+    T: WidgetTrait + RetrieveHandler<Value> + Clone + 'static
 {
 }
 
 #[async_trait]
-impl<Value: Thread_safe + 'static> Widget_trait for Box<dyn Field<Value>> {
-    async fn layout(&mut self, input: Layout_input<'_>) -> Result<Children> {
+impl<Value: ThreadSafe + 'static> WidgetTrait for Box<dyn Field<Value>> {
+    async fn layout(&mut self, input: LayoutInput<'_>) -> Result<Children> {
         (**self).layout(input).await
     }
 
-    async fn render(&mut self, input: Render_input<'_, '_>) -> Result<()> {
+    async fn render(&mut self, input: RenderInput<'_, '_>) -> Result<()> {
         (**self).render(input).await
     }
 
-    async fn on_all_events(&mut self, input: All_events<'_>) -> Result<Vizual_msg> {
+    async fn on_all_events(&mut self, input: AllEvents<'_>) -> Result<VizualMsg> {
         (**self).on_all_events(input).await
     }
 
-    async fn on_mouse_click(&mut self, input: Mouse_event<'_>) -> Result<Vizual_msg> {
+    async fn on_mouse_click(&mut self, input: MouseEvent<'_>) -> Result<VizualMsg> {
         (**self).on_mouse_click(input).await
     }
 
-    async fn on_key_press(&mut self, input: Key_press<'_>) -> Result<Vizual_msg> {
+    async fn on_key_press(&mut self, input: KeyPress<'_>) -> Result<VizualMsg> {
         (**self).on_key_press(input).await
     }
 
-    async fn on_other_event(&mut self, input: Other_event<'_>) -> Result<Vizual_msg> {
+    async fn on_other_event(&mut self, input: OtherEvent<'_>) -> Result<VizualMsg> {
         (**self).on_other_event(input).await
     }
 
@@ -90,73 +90,74 @@ impl<Value: Thread_safe + 'static> Widget_trait for Box<dyn Field<Value>> {
         &mut self,
         event: &Event,
         relayout: vizual::Signal,
-    ) -> Result<Vizual_msg> {
-        (**self).forward_event(event, relayout).await
+        window: std::sync::Arc<vizual::Window>,
+    ) -> Result<VizualMsg> {
+        (**self).forward_event(event, relayout, window).await
     }
 }
 
 #[async_trait]
-impl<Value: Thread_safe + 'static> Retrieve_handler<Value> for Box<dyn Field<Value>> {
+impl<Value: ThreadSafe + 'static> RetrieveHandler<Value> for Box<dyn Field<Value>> {
     async fn on_retrieve(&mut self) -> Result<State<Value>> {
         (**self).on_retrieve().await
     }
 }
 
 /// An ordered group of configuration nodes.
-pub struct Configuration_tree_branch(pub IndexMap<String, Configuration_tree>);
+pub struct ConfigurationTreeBranch(pub IndexMap<String, ConfigurationTree>);
 
-impl Configuration_tree_branch {
-    fn get_node(self, cursor: &[String]) -> Result<Configuration_tree> {
-        let mut node = Configuration_tree::Branch(self);
+impl ConfigurationTreeBranch {
+    fn get_node(self, cursor: &[String]) -> Result<ConfigurationTree> {
+        let mut node = ConfigurationTree::Branch(self);
 
         for key in cursor {
             node = match node {
-                Configuration_tree::Branch(mut branch) => branch
+                ConfigurationTree::Branch(mut branch) => branch
                     .0
                     .shift_remove(key)
                     .ok_or_else(|| eyre!("Expected key to exist"))?,
-                Configuration_tree::Leaf(_) => return Err(eyre!("Expected branch")),
+                ConfigurationTree::Leaf(_) => return Err(eyre!("Expected branch")),
             };
         }
 
         Ok(node)
     }
 
-    pub fn get_leaf(self, cursor: &[String]) -> Result<Configuration_tree_leaf> {
+    pub fn get_leaf(self, cursor: &[String]) -> Result<ConfigurationTreeLeaf> {
         match self.get_node(cursor)? {
-            Configuration_tree::Leaf(leaf) => Ok(leaf),
-            Configuration_tree::Branch(_) => Err(eyre!("Expected leaf")),
+            ConfigurationTree::Leaf(leaf) => Ok(leaf),
+            ConfigurationTree::Branch(_) => Err(eyre!("Expected leaf")),
         }
     }
 
-    pub fn get_branch(self, cursor: &[String]) -> Result<Configuration_tree_branch> {
+    pub fn get_branch(self, cursor: &[String]) -> Result<ConfigurationTreeBranch> {
         match self.get_node(cursor)? {
-            Configuration_tree::Branch(branch) => Ok(branch),
-            Configuration_tree::Leaf(_) => Err(eyre!("Expected branch")),
+            ConfigurationTree::Branch(branch) => Ok(branch),
+            ConfigurationTree::Leaf(_) => Err(eyre!("Expected branch")),
         }
     }
 }
 
 /// A single editable configuration field.
-pub struct Configuration_tree_leaf {
+pub struct ConfigurationTreeLeaf {
     pub widget: Widget,
     pub description: String,
     pub name: String,
 }
 
 /// A branch or editable leaf in a configuration tree.
-pub enum Configuration_tree {
-    Branch(Configuration_tree_branch),
-    Leaf(Configuration_tree_leaf),
+pub enum ConfigurationTree {
+    Branch(ConfigurationTreeBranch),
+    Leaf(ConfigurationTreeLeaf),
 }
 
-impl Configuration_tree {
+impl ConfigurationTree {
     pub fn new_leaf(
-        field: &(impl Widget_trait + Clone + 'static),
+        field: &(impl WidgetTrait + Clone + 'static),
         name: impl Into<String>,
         description: impl Into<String>,
     ) -> Self {
-        Self::Leaf(Configuration_tree_leaf {
+        Self::Leaf(ConfigurationTreeLeaf {
             widget: field.clone().as_any(),
             description: description.into(),
             name: name.into(),
@@ -165,24 +166,24 @@ impl Configuration_tree {
 }
 
 #[derive(Clone)]
-struct Tree_menu_item {
+struct TreeMenuItem {
     name: String,
     cursor: Vec<String>,
     depth: usize,
 }
 
 #[async_trait]
-impl Custom_widget_trait for Tree_menu_item {
+impl CustomWidgetTrait for TreeMenuItem {
     type Payload = bool;
 
     async fn layout(
         &mut self,
-        Layout_input {
+        LayoutInput {
             relayout,
             theme,
             slots,
             ..
-        }: Layout_input<'_>,
+        }: LayoutInput<'_>,
         selected: bool,
     ) -> Result<Children> {
         const INDENT: usize = 50;
@@ -201,29 +202,29 @@ impl Custom_widget_trait for Tree_menu_item {
 }
 
 #[async_trait]
-impl Retrieve_handler<Vec<String>> for Tree_menu_item {
+impl RetrieveHandler<Vec<String>> for TreeMenuItem {
     async fn on_retrieve(&mut self) -> Result<State<Vec<String>>> {
         Ok(self.cursor.clone().into())
     }
 }
 
 fn collect_menu_items(
-    branch: &Configuration_tree_branch,
+    branch: &ConfigurationTreeBranch,
     cursor: &[String],
-    items: &mut Vec<Menu_item<Vec<String>>>,
+    items: &mut Vec<MenuItem<Vec<String>>>,
 ) {
     for (name, child) in &branch.0 {
         let mut child_cursor = cursor.to_vec();
         child_cursor.push(name.clone());
         let depth = cursor.len();
 
-        items.push(Box::new(Tree_menu_item {
+        items.push(Box::new(TreeMenuItem {
             name: name.clone(),
             cursor: child_cursor.clone(),
             depth,
         }));
 
-        if let Configuration_tree::Branch(branch) = child {
+        if let ConfigurationTree::Branch(branch) = child {
             collect_menu_items(branch, &child_cursor, items);
         }
     }
@@ -234,13 +235,13 @@ fn collect_menu_items(
 pub struct Configurator<Tree: crate::Tree> {
     tree: Arc<Mutex<Tree>>,
     menu: Menu<Vec<String>>,
-    submit_handler: Option<Box<dyn Submit_handler<Tree::Configuration>>>,
+    submit_handler: Option<Box<dyn SubmitHandler<Tree::Configuration>>>,
     configuration_path: PathBuf,
 }
 
 #[async_trait]
-impl<Tree: crate::Tree> Submit_handler<bool> for Configurator<Tree> {
-    async fn on_submit(&mut self, _focused: bool) -> Result<Vizual_msg> {
+impl<Tree: crate::Tree> SubmitHandler<bool> for Configurator<Tree> {
+    async fn on_submit(&mut self, _focused: bool) -> Result<VizualMsg> {
         let config = self.tree.lock().await?.create_config().await?;
         let string =
             serde_saphyr::to_string(&config).wrap_err("Failed to serialize configuration")?;
@@ -256,14 +257,14 @@ impl<Tree: crate::Tree> Submit_handler<bool> for Configurator<Tree> {
             return submit_handler.on_submit(config).await;
         }
 
-        Vizual_msg::none()
+        VizualMsg::none()
     }
 }
 
 pub async fn new<Tree: crate::Tree>(
     configuration_path: impl AsRef<Path>,
     tree: Tree,
-    submit_handler: Option<impl Submit_handler<Tree::Configuration>>,
+    submit_handler: Option<impl SubmitHandler<Tree::Configuration>>,
 ) -> Result<Configurator<Tree>> {
     let tree_branch = tree.get_tree();
     let mut items = Vec::new();
@@ -282,20 +283,20 @@ pub async fn new<Tree: crate::Tree>(
         menu,
         configuration_path: configuration_path.as_ref().to_owned(),
         submit_handler: submit_handler
-            .map(|handler| Box::new(handler) as Box<dyn Submit_handler<Tree::Configuration>>),
+            .map(|handler| Box::new(handler) as Box<dyn SubmitHandler<Tree::Configuration>>),
     })
 }
 
 #[async_trait]
-impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
+impl<Tree: crate::Tree> WidgetTrait for Configurator<Tree> {
     async fn layout(
         &mut self,
-        Layout_input {
+        LayoutInput {
             relayout,
             theme,
             slots,
             ..
-        }: Layout_input<'_>,
+        }: LayoutInput<'_>,
     ) -> Result<Children> {
         let cursor = self
             .menu
@@ -322,7 +323,7 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
                     ),
                 );
 
-                let leaf = Title_block::new(axis, leaf.name);
+                let leaf = TitleBlock::new(axis, leaf.name);
 
                 Some(leaf.as_any())
             } else {
@@ -332,7 +333,7 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
 
         let theme = theme.affect(relayout).await?;
         let gap = theme.semantic.axis.gap;
-        let menu = Title_block::new(self.menu.clone(), "Config");
+        let menu = TitleBlock::new(self.menu.clone(), "Config");
         let menu = Anchor::top_left(menu);
 
         let mut text = Text::new("Apply");
@@ -341,8 +342,8 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
         let button = Anchor::new(
             button,
             Anchors {
-                horizontal: Some(Anchor_position::End),
-                vertical: Some(Anchor_position::End),
+                horizontal: Some(AnchorPosition::End),
+                vertical: Some(AnchorPosition::End),
             },
         );
 
@@ -350,8 +351,8 @@ impl<Tree: crate::Tree> Widget_trait for Configurator<Tree> {
             let field = Anchor::new(
                 field,
                 Anchors {
-                    horizontal: Some(Anchor_position::End),
-                    vertical: Some(Anchor_position::Start),
+                    horizontal: Some(AnchorPosition::End),
+                    vertical: Some(AnchorPosition::Start),
                 },
             );
             Grid::new((menu, field, button), gap)
