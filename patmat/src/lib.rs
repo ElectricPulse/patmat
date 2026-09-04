@@ -3,7 +3,7 @@ pub mod task;
 mod ui;
 pub mod utils;
 
-pub use utils::normalize_path;
+pub use vizual::utils::normalize_path;
 
 use color_eyre::eyre::Result;
 use lucide_icons::Icon as LucideIcon;
