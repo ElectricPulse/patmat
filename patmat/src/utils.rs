@@ -1,14 +1,13 @@
 use crate::target::{Dependencies, Dependency};
 use color_eyre::eyre::Result;
 use std::{collections::HashSet, path::Path};
-use vizual::Signal;
-
+use vizual::{Signal, utils::normalize_path};
 
 pub(crate) fn display_target_path(path: &Path, working_directory: &Path) -> String {
     let path = path.strip_prefix(working_directory).unwrap_or(path);
     match path.as_os_str().is_empty() {
         true => ".".to_owned(),
-        false => path.display().to_string(),
+        false => normalize_path(path),
     }
 }
 

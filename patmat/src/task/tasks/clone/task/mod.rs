@@ -47,7 +47,9 @@ impl task::TaskTrait for Task {
     }
 
     async fn run(&self, widget: Store<Option<Widget>>) -> task::TaskResult {
-        widget.set(Some(Anchor::middle(self.widget()).as_any())).await?;
+        widget
+            .set(Some(Anchor::middle(self.widget()).as_any()))
+            .await?;
 
         let git_dir = self.path.join(".git");
 

@@ -22,7 +22,11 @@ pub fn with_terminal_in_dir(
     command: impl Into<String>,
     working_dir: impl Into<PathBuf>,
 ) -> Task<()> {
-    build(task::Task::with_terminal_in_dir(terminal, command, working_dir))
+    build(task::Task::with_terminal_in_dir(
+        terminal,
+        command,
+        working_dir,
+    ))
 }
 
 fn build(task: task::Task) -> Task<()> {

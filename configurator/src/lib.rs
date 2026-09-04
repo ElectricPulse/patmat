@@ -22,8 +22,7 @@ use vizual::{
     state::State,
     sync::{Mutex, ThreadSafe},
     widget::{
-        AllEvents, KeyPress, LayoutInput, MouseEvent, OtherEvent, RenderInput, Widget,
-        WidgetTrait,
+        AllEvents, KeyPress, LayoutInput, MouseEvent, OtherEvent, RenderInput, Widget, WidgetTrait,
         custom_widget::CustomWidgetTrait,
         widgets::{
             button::Button,

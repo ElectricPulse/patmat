@@ -47,7 +47,10 @@ async fn metadata_clones_share_each_store() -> Result<()> {
 
 #[tokio::test]
 async fn task_init_sets_target_path() -> Result<()> {
-    let target = Target::new_independent("with_path", Task::new(PathTask(PathBuf::from("/test/path"))));
+    let target = Target::new_independent(
+        "with_path",
+        Task::new(PathTask(PathBuf::from("/test/path"))),
+    );
     tokio::time::sleep(std::time::Duration::from_millis(20)).await;
     let metadata = target.get_metadata();
     assert_eq!(

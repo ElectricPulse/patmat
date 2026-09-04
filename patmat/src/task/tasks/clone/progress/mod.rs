@@ -187,14 +187,13 @@ impl WidgetTrait for ProgressBar {
     async fn layout(
         &mut self,
         LayoutInput {
-            hitbox,
-            formula,
-            ..
+            hitbox, formula, ..
         }: LayoutInput<'_>,
     ) -> Result<Children> {
-        formula.constrain(vizual::id!(), vizual::constraint!(
-                hitbox.get_dimension(Direction::Horizontal) >= MINIMUM_BAR_WIDTH
-            ))?;
+        formula.constrain(
+            vizual::id!(),
+            vizual::constraint!(hitbox.get_dimension(Direction::Horizontal) >= MINIMUM_BAR_WIDTH),
+        )?;
         hitbox
             .set_static_dimension(formula, Direction::Vertical, BAR_HEIGHT)
             .await?;

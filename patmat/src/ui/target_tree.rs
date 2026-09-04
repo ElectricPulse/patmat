@@ -128,10 +128,7 @@ impl WidgetTrait for TargetTree {
             .await?
             .into_iter()
             .map(|target| -> MenuItem<Dependency> {
-                Box::new(TargetTreeItem::new(
-                    target,
-                    self.working_directory.clone(),
-                ))
+                Box::new(TargetTreeItem::new(target, self.working_directory.clone()))
             })
             .collect::<Vec<_>>();
 

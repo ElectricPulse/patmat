@@ -65,18 +65,11 @@ impl<Output: OutputConstraints> Target<Output> {
         self.widget.clone()
     }
 
-    pub fn new_independent(
-        name: impl Into<String>,
-        task: Task<Output>,
-    ) -> Self {
+    pub fn new_independent(name: impl Into<String>, task: Task<Output>) -> Self {
         Self::new(name, task, Dependencies::new())
     }
 
-    pub fn new(
-        name: impl Into<String>,
-        task: Task<Output>,
-        dependencies: Dependencies,
-    ) -> Self {
+    pub fn new(name: impl Into<String>, task: Task<Output>, dependencies: Dependencies) -> Self {
         let metadata = TargetMetadata {
             id: Store::new(NEXT_TARGET_ID.fetch_add(1, Ordering::Relaxed)),
             name: Store::new(name.into()),
@@ -115,13 +108,7 @@ impl<Output: OutputConstraints> Target<Output> {
 
         self.set_status(TargetStatus::Running).await?;
 
-        let result = self
-            .task
-            .task
-            .lock()
-            .await?
-            .run(self.widget.clone())
-            .await;
+        let result = self.task.task.lock().await?.run(self.widget.clone()).await;
 
         let (output, status) = match result {
             Err(err) => {

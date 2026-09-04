@@ -3,8 +3,6 @@ pub mod task;
 mod ui;
 pub mod utils;
 
-pub use vizual::utils::normalize_path;
-
 use color_eyre::eyre::Result;
 use lucide_icons::Icon as LucideIcon;
 use std::path::{Path, PathBuf};
@@ -16,13 +14,8 @@ use crate::{
     utils::display_target_path,
 };
 use vizual::{
-    self,
-    component::Children,
-    geometry::Direction,
-    state::Store,
-    widget::{
-        LayoutInput, SharedWidget, WidgetTrait,
-        widgets::{
+    self, component::Children, geometry::Direction, state::Store, utils::normalize_path, widget::{
+        LayoutInput, SharedWidget, Widget, WidgetTrait, widgets::{
             icon::Icon, layout::axis::Axis, linebreak::Linebreak, paragraph::Paragraph,
             positioning::anchor::Anchor, scroll::Scroll, text::Text,
         },
@@ -160,20 +153,21 @@ impl WidgetTrait for Builder {
         };
 
         let widget = dependency.widget().affect(relayout.clone()).await?.clone();
-        let panel = if let Some(widget) = widget {
-            Axis::new(
+        let panel: Widget = if let Some(widget) = widget {
+            Box::new(Axis::new(
                 Direction::Vertical,
                 (
                     Anchor::top_left(metadata),
                     Linebreak::new(Direction::Horizontal),
                     widget,
                 ),
-            )
+            ))
         } else {
-            Axis::new(Direction::Vertical, (metadata,))
+            Box::new(Anchor::top_right(Axis::new(
+                Direction::Vertical,
+                (metadata,),
+            )))
         };
-
-        let panel = Anchor::top_right(panel);
 
         let axis = Axis::new(
             Direction::Horizontal,
