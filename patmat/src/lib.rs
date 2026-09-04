@@ -109,7 +109,7 @@ impl WidgetTrait for Builder {
         let name_item = Anchor::left(name);
 
         let path_paragraph_width = theme.units.em * 10.0;
-        let paragraph_width = theme.units.em * 30.0;
+        let paragraph_width = theme.units.em * 15.0;
         let label_style = theme.specific.text.paragraph.bold();
 
         let mut path_label = Text::new("Path:");
@@ -160,17 +160,20 @@ impl WidgetTrait for Builder {
         };
 
         let widget = dependency.widget().affect(relayout.clone()).await?.clone();
-        let mut panel = if let Some(widget) = widget {
+        let panel = if let Some(widget) = widget {
             Axis::new(
                 Direction::Vertical,
-                (metadata, Linebreak::new(Direction::Horizontal), widget),
+                (
+                    Anchor::top_left(metadata),
+                    Linebreak::new(Direction::Horizontal),
+                    widget,
+                ),
             )
         } else {
             Axis::new(Direction::Vertical, (metadata,))
         };
 
-        panel.limit_cross = true;
-        let panel = Anchor::top(panel);
+        let panel = Anchor::top_right(panel);
 
         let axis = Axis::new(
             Direction::Horizontal,
@@ -179,7 +182,8 @@ impl WidgetTrait for Builder {
                 Linebreak::new(Direction::Vertical),
                 panel,
             ),
-        );
+        )
+        .free_cross();
 
         Ok(vec![display!(axis)])
     }
