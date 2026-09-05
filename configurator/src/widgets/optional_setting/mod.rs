@@ -70,14 +70,14 @@ impl<Value: ThreadSafe> CustomWidgetTrait for DefaultLeafValue<Value> {
         selected: bool,
     ) -> Result<Children> {
         let theme = theme.affect(relayout).await?;
-        let mut text = Text::new(format!("Default - {}", self.label));
         let mut style = theme.specific.text.button;
         if !selected {
             style.color = theme.semantic.text.muted;
         }
-        text.style.set(style);
 
-        Ok(vec![display!(text)])
+        Ok(vec![display!(
+            Text::new(format!("Default - {}", self.label)).style(style)
+        )])
     }
 }
 
@@ -109,12 +109,11 @@ impl<Value: ThreadSafe> CustomWidgetTrait for CustomLeafValue<Value> {
         selected: bool,
     ) -> Result<Children> {
         let theme = theme.affect(relayout).await?;
-        let mut title = Text::new("Custom");
         let mut style = theme.specific.text.button;
         if !selected {
             style.color = theme.semantic.text.muted;
         }
-        title.style.set(style);
+        let title = Text::new("Custom").style(style);
 
         if !selected {
             return Ok(vec![display!(title)]);

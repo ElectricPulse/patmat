@@ -187,13 +187,11 @@ impl CustomWidgetTrait for TreeMenuItem {
     ) -> Result<Children> {
         const INDENT: usize = 50;
         let theme = theme.affect(relayout).await?;
-        let mut text = Text::new(&self.name);
         let mut style = theme.specific.text.paragraph;
         if !selected {
             style.color = theme.semantic.text.muted;
         }
-        text.style.set(style);
-        let mut button = Button::around(text);
+        let mut button = Button::around(Text::new(&self.name).style(style));
         button.highlighted = selected;
         let button = Space::left(button, (INDENT * self.depth) as f64, 1);
         Ok(vec![display!(button)])
@@ -335,9 +333,10 @@ impl<Tree: crate::Tree> WidgetTrait for Configurator<Tree> {
         let menu = TitleBlock::new(self.menu.clone(), "Config");
         let menu = Anchor::top_left(menu);
 
-        let mut text = Text::new("Apply");
-        text.style.set(theme.specific.text.button);
-        let button = Button::new(text, self.clone());
+        let button = Button::new(
+            Text::new("Apply").style(theme.specific.text.button),
+            self.clone(),
+        );
         let button = Anchor::new(
             button,
             Anchors {

@@ -58,27 +58,24 @@ impl CustomWidgetTrait for TargetTreeItem {
         let icon = Icon::new(metadata.status.affect(relayout.clone()).await?.get_icon());
         let icon = Anchor::v_middle(icon);
 
-        let mut name = Text::new(metadata.name);
         let mut name_style = theme.specific.text.paragraph;
         if !selected {
             name_style.color = theme.semantic.text.muted;
         }
-        name.style.set(name_style);
-        let name = Anchor::left(name);
+        let name = Anchor::left(Text::new(metadata.name).style(name_style));
 
         let path = metadata.path.affect(relayout).await?.clone();
         let details = match path {
             Some(path) => {
                 let path = display_target_path(&path, &self.working_directory);
-                let mut path_text = Text::new(path);
                 let mut path_style = theme.specific.text.paragraph;
                 path_style.color = theme.semantic.text.muted;
-                path_text.style.set(path_style);
-                let mut folder_icon = Icon::new(LucideIcon::Folder);
-                folder_icon.style.set(path_style);
                 let path_row = Axis::new(
                     Direction::Horizontal,
-                    (Anchor::v_middle(folder_icon), Anchor::v_middle(path_text)),
+                    (
+                        Anchor::v_middle(Icon::new(LucideIcon::Folder).style(path_style)),
+                        Anchor::v_middle(Text::new(path).style(path_style)),
+                    ),
                 );
                 let path = Anchor::top_left(path_row);
                 Axis::new(Direction::Vertical, (name, path))
