@@ -14,7 +14,7 @@ PatMat is a build tool whose recipes are meant to be written with the ease of a 
 ## Architecture
 
 - **Targets and Tasks**: A `Target` defines an execution node with dependencies and an associated `Task_trait`.
-- **Reactive UI**: The `Builder` widget renders the dependency tree, selection details, and active widgets via Vizual stores.
+- **Reactive UI**: The `Builder` widget renders the dependency tree, selection details, and active widgets via Drevo stores.
 - **Terminal Task**: Runs commands with live terminal output embedded in the UI panel.
 
 ## Usage
@@ -23,7 +23,7 @@ Create a `Task` from a `Task_trait`, `Task::from_fn`, or `Task::from_run`. Built
 
 Wrap a task in `Target::new_independent(name, task)` or `Target::new(name, task, dependencies)`. `Target::get()` runs dependencies first, runs the target once, and returns its cached output on later calls.
 
-Pass a non-empty `Dependencies` list and its working directory to `patmat::new()`. It returns a Vizual `Builder`, starts target execution in the background, and displays target status, output widgets, and errors.
+Pass a non-empty `Dependencies` list and its working directory to `patmat::new()`. It returns a Drevo `Builder`, starts target execution in the background, and displays target status, output widgets, and errors.
 
 The `drevo-configurator` crate provides `Configurator<Tree>` for interactive YAML configuration. A `Tree` supplies a `Configuration_tree_branch` and creates the serialized configuration when submitted.
 

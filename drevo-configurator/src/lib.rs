@@ -14,7 +14,7 @@ use serde::Serialize;
 use drevo_macros::display;
 
 use drevo::{
-    VizualMsg,
+    DrevoMsg,
     component::Children,
     event::Event,
     geometry::Direction,
@@ -69,19 +69,19 @@ impl<Value: ThreadSafe + 'static> WidgetTrait for Box<dyn Field<Value>> {
         (**self).render(input).await
     }
 
-    async fn on_all_events(&mut self, input: AllEvents<'_>) -> Result<VizualMsg> {
+    async fn on_all_events(&mut self, input: AllEvents<'_>) -> Result<DrevoMsg> {
         (**self).on_all_events(input).await
     }
 
-    async fn on_mouse_click(&mut self, input: MouseEvent<'_>) -> Result<VizualMsg> {
+    async fn on_mouse_click(&mut self, input: MouseEvent<'_>) -> Result<DrevoMsg> {
         (**self).on_mouse_click(input).await
     }
 
-    async fn on_key_press(&mut self, input: KeyPress<'_>) -> Result<VizualMsg> {
+    async fn on_key_press(&mut self, input: KeyPress<'_>) -> Result<DrevoMsg> {
         (**self).on_key_press(input).await
     }
 
-    async fn on_other_event(&mut self, input: OtherEvent<'_>) -> Result<VizualMsg> {
+    async fn on_other_event(&mut self, input: OtherEvent<'_>) -> Result<DrevoMsg> {
         (**self).on_other_event(input).await
     }
 
@@ -90,7 +90,7 @@ impl<Value: ThreadSafe + 'static> WidgetTrait for Box<dyn Field<Value>> {
         event: &Event,
         relayout: drevo::Signal,
         window: std::sync::Arc<drevo::Window>,
-    ) -> Result<VizualMsg> {
+    ) -> Result<DrevoMsg> {
         (**self).forward_event(event, relayout, window).await
     }
 }
@@ -238,7 +238,7 @@ pub struct Configurator<Tree: crate::Tree> {
 
 #[async_trait]
 impl<Tree: crate::Tree> SubmitHandler<bool> for Configurator<Tree> {
-    async fn on_submit(&mut self, _focused: bool) -> Result<VizualMsg> {
+    async fn on_submit(&mut self, _focused: bool) -> Result<DrevoMsg> {
         let config = self.tree.lock().await?.create_config().await?;
         let string =
             serde_saphyr::to_string(&config).wrap_err("Failed to serialize configuration")?;
@@ -254,7 +254,7 @@ impl<Tree: crate::Tree> SubmitHandler<bool> for Configurator<Tree> {
             return submit_handler.on_submit(config).await;
         }
 
-        VizualMsg::none()
+        DrevoMsg::none()
     }
 }
 
