@@ -1,3 +1,3 @@
-[patch."https://github.com/ElectricPulse/vizual"]
-drevo = { path = "../vizual/vizual" }
-drevo-macros = { path = "../vizual/vizual-macros" }
+[patch."https://github.com/ElectricPulse/drevo"]
+drevo = { path = "../drevo/drevo" }
+drevo-macros = { path = "../drevo/drevo-macros" }

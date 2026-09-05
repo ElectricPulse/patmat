@@ -25,7 +25,7 @@ Wrap a task in `Target::new_independent(name, task)` or `Target::new(name, task,
 
 Pass a non-empty `Dependencies` list and its working directory to `patmat::new()`. It returns a Vizual `Builder`, starts target execution in the background, and displays target status, output widgets, and errors.
 
-The `vizual-configurator` crate provides `Configurator<Tree>` for interactive YAML configuration. A `Tree` supplies a `Configuration_tree_branch` and creates the serialized configuration when submitted.
+The `drevo-configurator` crate provides `Configurator<Tree>` for interactive YAML configuration. A `Tree` supplies a `Configuration_tree_branch` and creates the serialized configuration when submitted.
 
 ## Demo
 
@@ -33,6 +33,6 @@ The `vizual-configurator` crate provides `Configurator<Tree>` for interactive YA
 
 ## Technologies used
 
-- [vizual](https://github.com/ElectricPulse/vizual) for UI components and reactive layout
+- [drevo](https://github.com/ElectricPulse/drevo) for UI components and reactive layout
 - [gix](https://github.com/GitoxideLabs/gitoxide) for Git operations
 - [tokio](https://github.com/tokio-rs/tokio) for asynchronous runtime

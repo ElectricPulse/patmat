@@ -1,5 +1,5 @@
 [package]
-name = "vizual-patmat"
+name = "drevo-patmat"
 version = "0.1.3"
 edition.workspace = true
 description = "A Makefile-like GUI build tool"
@@ -7,7 +7,7 @@ repository.workspace = true
 license.workspace = true
 readme.workspace = true
 categories = ["development-tools::build-utils", "gui", "asynchronous"]
-keywords = ["build-tool", "task-runner", "gui", "git", "vizual"]
+keywords = ["build-tool", "task-runner", "gui", "git", "drevo"]
 
 [dependencies]
 ambassador = "0.5.0"

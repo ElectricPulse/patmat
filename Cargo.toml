@@ -10,8 +10,8 @@ readme = "README.md"
 
 [workspace.dependencies]
 derive-where = "1.6.1"
-drevo = { version = "0.1.6", git = "https://github.com/ElectricPulse/vizual" }
-drevo-macros = { version = "0.1.3", git = "https://github.com/ElectricPulse/vizual" }
+drevo = { version = "0.1.6", git = "https://github.com/ElectricPulse/drevo" }
+drevo-macros = { version = "0.1.3", git = "https://github.com/ElectricPulse/drevo" }
 
 [workspace.lints.rust]
 non_camel_case_types = "allow"

@@ -6,7 +6,7 @@ description = "A tree-based configuration editor for Patmat applications"
 repository.workspace = true
 license.workspace = true
 categories = ["config", "gui"]
-keywords = ["config", "editor", "tree", "gui", "vizual"]
+keywords = ["config", "editor", "tree", "gui", "drevo"]
 
 [dependencies]
 async-recursion = "1.1.1"
