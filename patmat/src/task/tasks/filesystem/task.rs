@@ -6,7 +6,7 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use vizual::{state::Store, widget::Widget};
+use drevo::{state::Store, widget::Widget};
 
 #[derive(Clone)]
 pub(super) struct CopyFileTask {

@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use std::sync::{Arc, atomic::Ordering};
-use vizual::{
+use drevo::{
     component::Children,
     geometry::{Direction, Rect},
     state::Store,
@@ -10,7 +10,7 @@ use vizual::{
         widgets::{layout::axis::Axis, paper::Paper, positioning::anchor::Anchor, text::Text},
     },
 };
-use vizual_macros::display;
+use drevo_macros::display;
 
 #[cfg(test)]
 mod tests;
@@ -191,8 +191,8 @@ impl WidgetTrait for ProgressBar {
         }: LayoutInput<'_>,
     ) -> Result<Children> {
         formula.constrain(
-            vizual::id!(),
-            vizual::constraint!(hitbox.get_dimension(Direction::Horizontal) >= MINIMUM_BAR_WIDTH),
+            drevo::id!(),
+            drevo::constraint!(hitbox.get_dimension(Direction::Horizontal) >= MINIMUM_BAR_WIDTH),
         )?;
         hitbox
             .set_static_dimension(formula, Direction::Vertical, BAR_HEIGHT)

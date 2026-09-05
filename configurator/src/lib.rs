@@ -11,9 +11,9 @@ use color_eyre::eyre::{Context, Result, eyre};
 use derive_where::derive_where;
 use indexmap::IndexMap;
 use serde::Serialize;
-use vizual_macros::display;
+use drevo_macros::display;
 
-use vizual::{
+use drevo::{
     VizualMsg,
     component::Children,
     event::Event,
@@ -88,8 +88,8 @@ impl<Value: ThreadSafe + 'static> WidgetTrait for Box<dyn Field<Value>> {
     async fn forward_event(
         &mut self,
         event: &Event,
-        relayout: vizual::Signal,
-        window: std::sync::Arc<vizual::Window>,
+        relayout: drevo::Signal,
+        window: std::sync::Arc<drevo::Window>,
     ) -> Result<VizualMsg> {
         (**self).forward_event(event, relayout, window).await
     }

@@ -5,7 +5,7 @@ use color_eyre::eyre::{Result, WrapErr, bail};
 use std::path::PathBuf;
 use tokio::process::Command;
 
-use vizual::{state::Store, widget::Widget};
+use drevo::{state::Store, widget::Widget};
 
 #[derive(Clone)]
 pub(super) struct Task {

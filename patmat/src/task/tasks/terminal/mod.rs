@@ -1,7 +1,7 @@
 pub mod task;
 
 use std::path::PathBuf;
-use vizual::widget::widgets::terminal::Terminal;
+use drevo::widget::widgets::terminal::Terminal;
 
 use crate::task::Task;
 

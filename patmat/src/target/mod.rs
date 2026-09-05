@@ -12,7 +12,7 @@ use std::{
 
 use crate::{target::status::TargetStatus, task::Task};
 use color_eyre::eyre::{Result, eyre};
-use vizual::{
+use drevo::{
     state::Store,
     sync::{Mutex, ThreadSafe},
     widget::Widget,

@@ -1,5 +1,5 @@
 use crate::task;
-use vizual::{
+use drevo::{
     state::Store,
     widget::{Widget, WidgetTrait, widgets::terminal::Terminal},
 };

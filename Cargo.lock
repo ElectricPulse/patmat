@@ -834,6 +834,65 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8b14ccef22fc6f5a8f4d7d768562a182c04ce9a3b3157b91390b52ddfdf1a76"
 
 [[package]]
+name = "drevo"
+version = "0.1.6"
+dependencies = [
+ "ambassador",
+ "async-recursion",
+ "async-trait",
+ "color-eyre",
+ "delegate",
+ "derive-new",
+ "derive-where",
+ "drevo-macros",
+ "dyn-clone",
+ "futures",
+ "highs",
+ "highs-sys",
+ "log",
+ "lucide-icons",
+ "parley",
+ "path-clean",
+ "pollster",
+ "replace-homedir",
+ "simplelog",
+ "skrifa 0.42.1",
+ "time",
+ "tokio",
+ "unit-intervals",
+ "uuid",
+ "vello",
+ "winit",
+]
+
+[[package]]
+name = "drevo-configurator"
+version = "0.1.1"
+dependencies = [
+ "async-recursion",
+ "async-trait",
+ "color-eyre",
+ "derive-where",
+ "drevo",
+ "drevo-macros",
+ "dyn-clone",
+ "indexmap",
+ "serde",
+ "serde-saphyr",
+ "tokio",
+ "uniqify",
+]
+
+[[package]]
+name = "drevo-macros"
+version = "0.1.3"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
 name = "dunce"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4898,72 +4957,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
-name = "vizual"
-version = "0.1.5"
-dependencies = [
- "ambassador",
- "async-recursion",
- "async-trait",
- "color-eyre",
- "delegate",
- "derive-new",
- "derive-where",
- "dyn-clone",
- "futures",
- "highs",
- "highs-sys",
- "log",
- "lucide-icons",
- "parley",
- "path-clean",
- "pollster",
- "replace-homedir",
- "simplelog",
- "skrifa 0.42.1",
- "time",
- "tokio",
- "unit-intervals",
- "uuid",
- "vello",
- "vizual-macros",
- "winit",
-]
-
-[[package]]
-name = "vizual-configurator"
-version = "0.1.1"
-dependencies = [
- "async-recursion",
- "async-trait",
- "color-eyre",
- "derive-where",
- "dyn-clone",
- "indexmap",
- "serde",
- "serde-saphyr",
- "tokio",
- "uniqify",
- "vizual",
- "vizual-macros",
-]
-
-[[package]]
-name = "vizual-macros"
-version = "0.1.2"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
 name = "vizual-patmat"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "ambassador",
  "async-trait",
  "color-eyre",
  "derive-new",
+ "drevo",
+ "drevo-macros",
  "dyn-clone",
  "gix",
  "lucide-icons",
@@ -4971,8 +4973,6 @@ dependencies = [
  "tempfile",
  "tokio",
  "uniqify",
- "vizual",
- "vizual-macros",
 ]
 
 [[package]]

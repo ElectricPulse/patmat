@@ -1,6 +1,6 @@
 [package]
 name = "vizual-patmat"
-version = "0.1.2"
+version = "0.1.3"
 edition.workspace = true
 description = "A Makefile-like GUI build tool"
 repository.workspace = true
@@ -29,8 +29,8 @@ lucide-icons = "1.28.0"
 regex = "1.11.3"
 tokio = { version = "1.47.1", features = ["full"] }
 uniqify = "0.1.0"
-vizual.workspace = true
-vizual-macros.workspace = true
+drevo.workspace = true
+drevo-macros.workspace = true
 
 [lints]
 workspace = true

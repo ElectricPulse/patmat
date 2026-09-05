@@ -1,5 +1,5 @@
 [package]
-name = "vizual-configurator"
+name = "drevo-configurator"
 version = "0.1.1"
 edition.workspace = true
 description = "A tree-based configuration editor for Patmat applications"
@@ -19,8 +19,8 @@ serde = "1.0.228"
 serde-saphyr = "0.0.8"
 tokio = "1.52.1"
 uniqify = "0.1.0"
-vizual.workspace = true
-vizual-macros.workspace = true
+drevo.workspace = true
+drevo-macros.workspace = true
 
 [lints]
 workspace = true

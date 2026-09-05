@@ -3,7 +3,7 @@ use color_eyre::Result;
 use derive_new::new;
 use lucide_icons::Icon as LucideIcon;
 use std::path::PathBuf;
-use vizual::{
+use drevo::{
     component::Children,
     geometry::Direction,
     handlers::RetrieveHandler,
@@ -20,7 +20,7 @@ use vizual::{
         },
     },
 };
-use vizual_macros::display;
+use drevo_macros::display;
 
 use crate::target::{Dependencies, Dependency};
 use crate::utils::{display_target_path, get_targets};

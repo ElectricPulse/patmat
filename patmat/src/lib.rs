@@ -6,14 +6,14 @@ pub mod utils;
 use color_eyre::eyre::Result;
 use lucide_icons::Icon as LucideIcon;
 use std::path::{Path, PathBuf};
-use vizual_macros::display;
+use drevo_macros::display;
 
 use crate::{
     target::{Dependencies, Dependency, status::TargetStatus},
     ui::target_tree::TargetTree,
     utils::display_target_path,
 };
-use vizual::{
+use drevo::{
     self,
     component::Children,
     geometry::Direction,

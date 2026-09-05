@@ -8,7 +8,7 @@ use std::{
     sync::{Arc, atomic::AtomicBool},
     time::Duration,
 };
-use vizual::{
+use drevo::{
     state::Store,
     widget::{Widget, WidgetTrait, widgets::positioning::anchor::Anchor},
 };

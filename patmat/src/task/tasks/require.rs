@@ -2,7 +2,7 @@ use crate::task::{self, Status, Task};
 
 use async_trait::async_trait;
 
-use vizual::{state::Store, widget::Widget};
+use drevo::{state::Store, widget::Widget};
 
 #[derive(Clone, Copy)]
 struct RequireTask {}

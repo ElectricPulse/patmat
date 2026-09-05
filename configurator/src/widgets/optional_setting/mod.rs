@@ -2,8 +2,8 @@ use async_trait::async_trait;
 use color_eyre::eyre::Result;
 use derive_where::derive_where;
 use std::{marker::PhantomData, sync::Arc};
-use vizual::geometry::Direction;
-use vizual::{
+use drevo::geometry::Direction;
+use drevo::{
     Signal,
     component::Children,
     handlers::RetrieveHandler,
@@ -20,7 +20,7 @@ use vizual::{
         },
     },
 };
-use vizual_macros::display;
+use drevo_macros::display;
 
 use crate::Field;
 
