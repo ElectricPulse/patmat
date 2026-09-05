@@ -77,7 +77,7 @@ impl CustomWidgetTrait for TargetTreeItem {
                         Anchor::v_middle(Text::new(path).style(path_style)),
                     ),
                 );
-                let path = Anchor::top_left(path_row);
+                let path = Anchor::left(path_row);
                 Axis::new(Direction::Vertical, (name, path))
             }
             None => Axis::new(Direction::Vertical, (name,)),

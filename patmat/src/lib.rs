@@ -14,8 +14,14 @@ use crate::{
     utils::display_target_path,
 };
 use vizual::{
-    self, component::Children, geometry::Direction, state::Store, utils::normalize_path, widget::{
-        LayoutInput, SharedWidget, Widget, WidgetTrait, widgets::{
+    self,
+    component::Children,
+    geometry::Direction,
+    state::Store,
+    utils::normalize_path,
+    widget::{
+        LayoutInput, SharedWidget, Widget, WidgetTrait,
+        widgets::{
             icon::Icon, layout::axis::Axis, linebreak::Linebreak, paragraph::Paragraph,
             positioning::anchor::Anchor, scroll::Scroll, text::Text,
         },
@@ -167,8 +173,7 @@ impl WidgetTrait for Builder {
                 Linebreak::new(Direction::Vertical),
                 panel,
             ),
-        )
-        .free_cross();
+        );
 
         Ok(vec![display!(axis)])
     }
